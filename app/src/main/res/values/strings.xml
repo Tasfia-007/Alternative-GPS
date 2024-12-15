@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">My Application</string>
+    <string name="menu_icon">Menu Icon</string>
+    <string name="profile_icon">Profile Icon</string>
+    <string name="traffic_moderate">Traffic: Moderate</string>
+    <string name="alternate_route_clear_roads">Alternate Route: Clear Roads</string>
+    <string name="main_road_heavy_traffic">Main Road: Heavy Traffic</string>
+    <string name="real_time_updates">Real-Time Updates</string>
+</resources>
