@@ -13,6 +13,7 @@ constraintlayout = "2.1.4"
 osmdroidAndroid = "6.1.12"
 playServicesMaps = "19.0.0"
 playServicesMapsVersion = "17.0.1"
+carUiLib = "2.6.0"
 
 [libraries]
 
@@ -28,6 +29,7 @@ play-services-maps = { group = "com.google.android.gms", name = "play-services-m
 osmdroid = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroid" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 play-services-maps-v1701 = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMapsVersion" }
+car-ui-lib = { group = "com.android.car.ui", name = "car-ui-lib", version.ref = "carUiLib" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

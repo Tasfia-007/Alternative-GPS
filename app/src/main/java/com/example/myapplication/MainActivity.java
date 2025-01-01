@@ -1,11 +1,16 @@
 package com.example.myapplication;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,6 +32,7 @@ import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -41,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView trafficSummary;
     private MapView mapView;
     private MyLocationNewOverlay locationOverlay;
+    private SearchView searchView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +61,15 @@ public class MainActivity extends AppCompatActivity {
         ImageView menuIcon = findViewById(R.id.menu_icon);
         profileIcon = findViewById(R.id.profile_icon);
         trafficSummary = findViewById(R.id.traffic_summary);
+        searchView = findViewById(R.id.search_view);
+        ImageButton directionButton = findViewById(R.id.direction_button);
+        directionButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, RoutingActivity.class);
+            startActivity(intent);
+        });
+//        EditText searchPlate = searchView.findViewById(androidx.appcompat.R.id.search_src_text);
+//        searchPlate.setHintTextColor(ContextCompat.getColor(this, android.R.color.darker_gray));
+//        searchPlate.setTextColor(ContextCompat.getColor(this, android.R.color.black));
 
         // Initialize MapView
         mapView = findViewById(R.id.mapview);
@@ -75,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        setupSearchView();
         // Fetch Points of Interest (POIs) in Dhaka
         fetchPOIs();
 
@@ -169,6 +186,77 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void setupSearchView() {
+        searchView.setImeOptions(EditorInfo.IME_ACTION_SEARCH);
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                fetchCoordinates(query);
+                searchView.clearFocus(); // Clear focus after search
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
+            }
+        });
+    }
+
+    private void fetchCoordinates(String query) {
+        String apiUrl = String.format(Locale.getDefault(), "https://nominatim.openstreetmap.org/search?q=%s&format=json&addressdetails=1", query);
+
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder().url(apiUrl).build();
+
+        new Thread(() -> {
+            try {
+                Response response = client.newCall(request).execute();
+                if (response.isSuccessful() && response.body() != null) {
+                    String jsonResponse = response.body().string();
+                    Log.d(TAG, "Overpass API Response: " + jsonResponse);
+                    // Use the built-in runOnUiThread method
+                    runOnUiThread(() -> parseCoordinates(jsonResponse));
+                } else {
+                    String errorMsg = "Request failed. Code: " + response.code();
+                    Log.e(TAG, errorMsg);
+                    runOnUiThread(() -> Toast.makeText(this, "Failed to fetch location: " + errorMsg, Toast.LENGTH_LONG).show());
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error fetching coordinates", e);
+                runOnUiThread(() -> Toast.makeText(this, "Error fetching location: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        }).start();
+    }
+
+    private void parseCoordinates(String jsonResponse) {
+        try {
+            JSONArray jsonArray = new JSONArray(jsonResponse);
+            if (jsonArray.length() > 0) {
+                JSONObject locationObject = jsonArray.getJSONObject(0);
+                double lat = locationObject.getDouble("lat");
+                double lon = locationObject.getDouble("lon");
+
+                GeoPoint geoPoint = new GeoPoint(lat, lon);
+                mapView.getController().setCenter(geoPoint);
+
+                Marker marker = new Marker(mapView);
+                marker.setPosition(geoPoint);
+                marker.setTitle("Location: " + locationObject.getString("display_name"));
+                marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                mapView.getOverlays().add(marker);
+                mapView.invalidate(); // Refresh the map
+
+                Toast.makeText(this, "Moved to location: " + locationObject.getString("display_name"), Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "No results found for the location.", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error parsing coordinates", e);
+            Toast.makeText(this, "Error parsing location data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
     // Method to fetch POIs like hospitals, banks, and schools from Overpass API
     private void fetchPOIs() {
         String overpassUrl = "http://overpass-api.de/api/interpreter?data=[out:json];(node[amenity=hospital](23.7,90.3,23.9,90.5);node[amenity=bank](23.7,90.3,23.9,90.5);node[amenity=school](23.7,90.3,23.9,90.5););out;";
@@ -182,6 +270,7 @@ public class MainActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     String jsonResponse = response.body().string();
                     Log.d(TAG, "Overpass API Response: " + jsonResponse);
+                    // Use the built-in runOnUiThread method
                     runOnUiThread(() -> displayPOIs(jsonResponse));
                 } else {
                     String errorMsg = "Request failed. Code: " + response.code();
