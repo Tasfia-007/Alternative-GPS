@@ -6,18 +6,73 @@
     tools:context=".MainActivity"
     android:id="@+id/drawer_layout">
     <!-- Main Content -->
+
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navigation_view"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        app:menu="@menu/drawer_menu" />
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+
         <!-- OSMDroid MapView -->
+
+        <!-- Top Bar -->
+
         <org.osmdroid.views.MapView
             android:id="@+id/mapview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:scrollbars="none"/>
+            android:scrollbars="none">
 
-        <!-- Top Bar -->
+
+            <!-- Updates panel should be separate from map -->
+            <ScrollView
+                android:id="@+id/updates_panel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/bottom_panel"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#CCFFFFFF"
+                    android:orientation="vertical"
+                    android:padding="10dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingBottom="5dp"
+                        android:text="@string/real_time_updates"
+                        android:textStyle="bold" />
+
+                    <!-- Other TextViews -->
+                </LinearLayout>
+            </ScrollView>
+        </org.osmdroid.views.MapView>
+
+        <ImageButton
+            android:id="@+id/direction_button"
+            android:layout_width="63dp"
+            android:layout_height="64dp"
+            android:layout_above="@id/bottom_panel"
+            android:layout_alignParentEnd="true"
+            android:layout_marginStart="16dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_marginBottom="16dp"
+            android:elevation="4dp"
+            android:padding="12dp"
+            android:src="@drawable/ic_direction" />
+
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
@@ -30,7 +85,7 @@
                 android:id="@+id/menu_icon"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:src="@drawable/baseline_account_circle_24"
+                android:src="@drawable/menubar"
                 android:contentDescription="@string/menu_icon"
                 android:padding="5dp" />
 
@@ -38,7 +93,16 @@
             <View
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="1" />
+                android:layout_weight=".01" />
+            <SearchView
+                android:id="@+id/search_view"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:iconifiedByDefault="false"
+                android:queryHint="Search location"
+                android:theme="@style/SearchViewStyle" />
+
 
             <!-- Profile/Login Icon -->
             <ImageView
@@ -72,45 +136,9 @@
                 android:background="#EEEEEE" />
 
             <!-- Expanded Details -->
-            <ScrollView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="10dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/real_time_updates"
-                        android:textStyle="bold"
-                        android:paddingBottom="5dp" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/main_road_heavy_traffic"
-                        android:padding="5dp" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/alternate_route_clear_roads"
-                        android:padding="5dp" />
-                </LinearLayout>
-            </ScrollView>
         </LinearLayout>
     </RelativeLayout>
 
     <!-- Navigation Drawer -->
-    <com.google.android.material.navigation.NavigationView
-        android:id="@+id/navigation_view"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_gravity="start"
-        android:background="#FFFFFF"
-        app:menu="@menu/drawer_menu" />
+
 </androidx.drawerlayout.widget.DrawerLayout>

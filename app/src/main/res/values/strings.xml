@@ -6,4 +6,9 @@
     <string name="alternate_route_clear_roads">Alternate Route: Clear Roads</string>
     <string name="main_road_heavy_traffic">Main Road: Heavy Traffic</string>
     <string name="real_time_updates">Real-Time Updates</string>
+    <string name="search_hint">Search hint</string>
+    <string name="current_location">Current Location</string>
+    <string name="zoom_in">Zoom In</string>
+    <string name="zoom_out">Zoom Out</string>
+    <string name="direction">Direction</string>
 </resources>
