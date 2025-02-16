@@ -1,0 +1,17 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/home"
+        android:title="Home" />
+    <item
+        android:id="@+id/traffic_updates"
+        android:title="Traffic Updates" />
+    <item
+        android:id="@+id/report_issue"
+        android:title="Report Issue" />
+    <item
+        android:id="@+id/settings"
+        android:title="Settings" />
+    <item
+        android:id="@+id/help"
+        android:title="Help/Support" />
+</menu>
