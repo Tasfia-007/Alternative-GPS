@@ -62,14 +62,6 @@
         android:layout_marginBottom="20dp" />
 
     <!-- Google Login -->
-    <Button
-        android:id="@+id/google_login_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Login with Google"
-        android:backgroundTint="#DB4437"
-        android:textColor="#FFFFFF"
-        android:layout_marginBottom="20dp" />
 
     <!-- Signup Redirect -->
     <TextView

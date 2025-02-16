@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -13,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.PopupMenu;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -39,7 +41,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
-
+    private SharedPreferences sharedPreferences;
     private static final String TAG = "MainActivity";
     private static final int LOCATION_PERMISSION_REQUEST = 1;
     private DrawerLayout drawerLayout;
@@ -55,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Configuration.getInstance().setUserAgentValue("com.example.myapplication/1.0");
-
+        sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE);
         // Initialize Views
         drawerLayout = findViewById(R.id.drawer_layout);
         ImageView menuIcon = findViewById(R.id.menu_icon);
@@ -100,17 +102,86 @@ public class MainActivity extends AppCompatActivity {
 
         // Hamburger Menu Click Listener
         menuIcon.setOnClickListener(v -> drawerLayout.openDrawer(findViewById(R.id.navigation_view)));
-
-        // Profile/Login Click Listener
+        // Profile Icon Click Listener
         profileIcon.setOnClickListener(v -> {
-            Toast.makeText(this, "Profile/Login Clicked", Toast.LENGTH_SHORT).show();
+            PopupMenu popup = new PopupMenu(MainActivity.this, profileIcon);
+            popup.getMenuInflater().inflate(R.menu.profile_menu, popup.getMenu());
+
+            updateMenuItems(popup.getMenu());
+            popup.setOnMenuItemClickListener(item -> {
+                int itemId = item.getItemId();
+                if (itemId == R.id.menu_login) {
+                    if (isLoggedIn()) {
+                        logoutUser(); // If logged in, log out
+                    } else {
+                        Intent loginIntent = new Intent(MainActivity.this, LoginActivity.class);
+                        startActivity(loginIntent);
+                    }
+                    return true;
+                } else if (itemId == R.id.menu_signup) {
+                    Intent signupIntent = new Intent(MainActivity.this, SignUpActivity.class);
+                    startActivity(signupIntent);
+                    return true;
+                } else if (itemId == R.id.menu_profile) {
+                    if (isLoggedIn()) {
+                        Intent profileIntent = new Intent(MainActivity.this, ProfileActivity.class);
+                        startActivity(profileIntent);
+
+                    } else {
+                        Toast.makeText(MainActivity.this, "Please log in to access your profile.", Toast.LENGTH_SHORT).show();
+                    }
+                    return true;
+                }
+                return false;
+            });
+
+            popup.show();
         });
+
 
         // Bottom Panel Click Listener
         trafficSummary.setOnClickListener(v -> {
             Toast.makeText(this, "Traffic Summary Clicked", Toast.LENGTH_SHORT).show();
         });
     }
+
+
+
+
+
+    private void updateMenuItems(android.view.Menu menu) {
+        if (isLoggedIn()) {
+            menu.findItem(R.id.menu_login).setTitle("Logout");
+            menu.findItem(R.id.menu_signup).setVisible(false); // Hide Sign Up if logged in
+        } else {
+            menu.findItem(R.id.menu_login).setTitle("Login");
+            menu.findItem(R.id.menu_signup).setVisible(true); // Show Sign Up if not logged in
+        }
+    }
+
+    // Check login state
+    private boolean isLoggedIn() {
+        return sharedPreferences.getBoolean("isLoggedIn", false);
+    }
+
+    // Log out user
+    private void logoutUser() {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.clear(); // Clear all stored session data
+        editor.apply();
+
+        Toast.makeText(this, "Logged out successfully!", Toast.LENGTH_SHORT).show();
+        // Optionally, navigate to login screen or refresh activity
+        recreate(); // Refresh the activity to update the menu
+    }
+
+
+
+
+
+
+
+
 
     @Override
     protected void onResume() {
