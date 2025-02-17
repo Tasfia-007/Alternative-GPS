@@ -4,13 +4,25 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.Point;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,17 +33,25 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
+import com.example.myapplication.AlertActivity;
+
+import com.google.android.material.navigation.NavigationView;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
+import org.osmdroid.events.MapEventsReceiver;
 import org.osmdroid.util.BoundingBox;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.Projection;
+import org.osmdroid.views.overlay.MapEventsOverlay;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Polyline;
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -143,9 +163,174 @@ public class MainActivity extends AppCompatActivity {
         trafficSummary.setOnClickListener(v -> {
             Toast.makeText(this, "Traffic Summary Clicked", Toast.LENGTH_SHORT).show();
         });
+
+
+        fetchPOIs(); // Ensure POIs are loaded before filtering
+
+        // Setup category buttons (THIS FIXES YOUR ISSUE)
+        setupCategoryButtons();
+
+
+        sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE);
+        drawerLayout = findViewById(R.id.drawer_layout);
+
+//for alert part
+        menuIcon.setOnClickListener(v -> {
+            PopupMenu popup = new PopupMenu(MainActivity.this, menuIcon);
+            popup.getMenuInflater().inflate(R.menu.drawer_menu, popup.getMenu());
+
+            popup.setOnMenuItemClickListener(item -> {
+                int itemId = item.getItemId();
+                if (itemId == R.id.alert) {
+                    // Check if user is logged in before navigating
+                    if (isLoggedIn()) {
+                        Intent intent = new Intent(MainActivity.this, AlertActivity.class);
+                        startActivity(intent);
+                    } else {
+                        Toast.makeText(this, "Please log in first", Toast.LENGTH_SHORT).show();
+                    }
+                    return true;
+                } else if (itemId == R.id.home) {
+                    Toast.makeText(this, "Home clicked", Toast.LENGTH_SHORT).show();
+                    return true;
+                } else if (itemId == R.id.traffic_updates) {
+                    Toast.makeText(this, "Traffic Updates clicked", Toast.LENGTH_SHORT).show();
+                    return true;
+                } else if (itemId == R.id.report_issue) {
+                    Toast.makeText(this, "Report Issue clicked", Toast.LENGTH_SHORT).show();
+                    return true;
+                } else if (itemId == R.id.settings) {
+                    Toast.makeText(this, "Settings clicked", Toast.LENGTH_SHORT).show();
+                    return true;
+                } else if (itemId == R.id.help) {
+                    Toast.makeText(this, "Help clicked", Toast.LENGTH_SHORT).show();
+                    return true;
+                }
+                return false;
+            });
+
+            popup.show();
+        });
+
+//for map location
+
+        setupLocationOverlay();
+
+        // Initialize Location Box
+        setupLocationBox();
+
+        // Add touch event listener for the map
+        setupTouchListener();
+
+
+    }
+    private TextView locationBox;
+
+    // Initialize the box to display tapped location name
+    private void setupLocationBox() {
+        locationBox = new TextView(this);
+        locationBox.setVisibility(View.GONE);
+        locationBox.setBackgroundColor(Color.parseColor("#AA000000")); // Semi-transparent black
+        locationBox.setTextColor(Color.WHITE);
+        locationBox.setPadding(20, 10, 20, 10);
+        locationBox.setTextSize(16);
+
+        // Add to the main layout
+        FrameLayout layout = findViewById(R.id.main_layout);
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(50, 50, 0, 0);
+        locationBox.setLayoutParams(params);
+        layout.addView(locationBox);
+    }
+
+    // Set up touch listener for the map
+    private void setupTouchListener() {
+        MapEventsOverlay overlay = new MapEventsOverlay(new org.osmdroid.events.MapEventsReceiver() {
+            @Override
+            public boolean singleTapConfirmedHelper(GeoPoint p) {
+                showLocationName(p);
+                return true;
+            }
+
+            @Override
+            public boolean longPressHelper(GeoPoint p) {
+                return false;
+            }
+        });
+
+        mapView.getOverlays().add(overlay);
+    }
+
+    // Fetch and show location name on touch
+    private void showLocationName(GeoPoint geoPoint) {
+        String locationName = getLocationName(geoPoint);
+        if (locationName.isEmpty()) {
+            locationName = "Unknown Location";
+        }
+
+        // Show marker at the tapped location
+        Marker marker = new Marker(mapView);
+        marker.setPosition(geoPoint);
+        marker.setTitle(locationName);
+        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+        mapView.getOverlays().add(marker);
+        mapView.invalidate(); // Refresh the map
+
+        // Show the box with location name
+        locationBox.setText(locationName);
+        locationBox.setVisibility(View.VISIBLE);
     }
 
 
+
+
+
+
+
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnected();
+    }
+
+    // Reverse geocode to get location name
+    private String getLocationName(GeoPoint geoPoint) {
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+
+        // Check if the device has internet connectivity
+        if (!isNetworkAvailable()) {
+            Log.e(TAG, "No internet connection");
+            return "Internet required for location lookup";
+        }
+
+        try {
+            List<Address> addresses = geocoder.getFromLocation(
+                    geoPoint.getLatitude(),
+                    geoPoint.getLongitude(),
+                    1
+            );
+
+            if (addresses != null && !addresses.isEmpty()) {
+                return addresses.get(0).getAddressLine(0);
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "Geocoder failed: " + e.getMessage(), e);
+        }
+
+        return "Unknown Location";
+    }
+
+    // Setup location overlay
+//    private void setupLocationOverlay() {
+//        locationOverlay = new MyLocationNewOverlay(mapView);
+//        mapView.getOverlays().add(locationOverlay);
+//        locationOverlay.enableMyLocation();
+//        locationOverlay.enableFollowLocation();
+//    }
 
 
 
@@ -158,6 +343,8 @@ public class MainActivity extends AppCompatActivity {
             menu.findItem(R.id.menu_signup).setVisible(true); // Show Sign Up if not logged in
         }
     }
+
+
 
     // Check login state
     private boolean isLoggedIn() {
@@ -328,9 +515,34 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Method to fetch POIs like hospitals, banks, and schools from Overpass API
+
+
+    private void setupCategoryButtons() {
+        findViewById(R.id.btn_hospitals).setOnClickListener(v -> showPOI(hospitalMarkers));
+        findViewById(R.id.btn_banks).setOnClickListener(v -> showPOI(bankMarkers));
+        findViewById(R.id.btn_schools).setOnClickListener(v -> showPOI(schoolMarkers));
+    }
+
+    private void showPOI(List<Marker> markers) {
+        mapView.getOverlays().clear();
+        mapView.getOverlays().addAll(markers);
+        mapView.invalidate();
+    }
+
+
+
+
+    // Store POIs by category
+    private List<Marker> hospitalMarkers = new ArrayList<>();
+    private List<Marker> bankMarkers = new ArrayList<>();
+    private List<Marker> schoolMarkers = new ArrayList<>();
+
+    // Fetch POIs like hospitals, banks, and schools from Overpass API
     private void fetchPOIs() {
-        String overpassUrl = "http://overpass-api.de/api/interpreter?data=[out:json];(node[amenity=hospital](23.7,90.3,23.9,90.5);node[amenity=bank](23.7,90.3,23.9,90.5);node[amenity=school](23.7,90.3,23.9,90.5););out;";
+        String overpassUrl = "http://overpass-api.de/api/interpreter?data=[out:json];" +
+                "(node[amenity=hospital](23.7,90.3,23.9,90.5);" +
+                "node[amenity=bank](23.7,90.3,23.9,90.5);" +
+                "node[amenity=school](23.7,90.3,23.9,90.5););out;";
 
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder().url(overpassUrl).build();
@@ -340,22 +552,15 @@ public class MainActivity extends AppCompatActivity {
                 Response response = client.newCall(request).execute();
                 if (response.isSuccessful() && response.body() != null) {
                     String jsonResponse = response.body().string();
-                    Log.d(TAG, "Overpass API Response: " + jsonResponse);
-                    // Use the built-in runOnUiThread method
                     runOnUiThread(() -> displayPOIs(jsonResponse));
-                } else {
-                    String errorMsg = "Request failed. Code: " + response.code();
-                    Log.e(TAG, errorMsg);
-                    runOnUiThread(() -> Toast.makeText(this, "Failed to fetch POIs: " + errorMsg, Toast.LENGTH_LONG).show());
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Error fetching POIs", e);
-                runOnUiThread(() -> Toast.makeText(this, "Error fetching POIs: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         }).start();
     }
 
-    // Method to parse POIs JSON response and display markers on the map
+    // Method to parse and categorize POIs
     private void displayPOIs(String jsonResponse) {
         try {
             JSONObject jsonObject = new JSONObject(jsonResponse);
@@ -363,27 +568,32 @@ public class MainActivity extends AppCompatActivity {
 
             for (int i = 0; i < elements.length(); i++) {
                 JSONObject element = elements.getJSONObject(i);
-
                 double lat = element.getDouble("lat");
                 double lon = element.getDouble("lon");
                 String type = element.optJSONObject("tags").optString("amenity", "Unknown");
-
-                Log.d(TAG, "Adding marker: " + type + " at [" + lat + ", " + lon + "]");
 
                 Marker marker = new Marker(mapView);
                 marker.setPosition(new GeoPoint(lat, lon));
                 marker.setTitle(type);
                 marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-                mapView.getOverlays().add(marker);
-            }
 
-            mapView.invalidate(); // Refresh map
-            Toast.makeText(this, "POIs added to map", Toast.LENGTH_SHORT).show();
+                switch (type) {
+                    case "hospital":
+                        hospitalMarkers.add(marker);
+                        break;
+                    case "bank":
+                        bankMarkers.add(marker);
+                        break;
+                    case "school":
+                        schoolMarkers.add(marker);
+                        break;
+                }
+            }
         } catch (Exception e) {
             Log.e(TAG, "Error parsing POIs", e);
-            Toast.makeText(this, "Error parsing POIs: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
+
 
     // Method to calculate a route between two points
     private void calculateRoute(GeoPoint startPoint, GeoPoint endPoint) {
