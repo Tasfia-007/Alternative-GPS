@@ -103,6 +103,8 @@ public class EditProfileActivity extends AppCompatActivity {
 
     }
 
+
+
     private void fetchUserData() {
         new Thread(() -> {
             try {
@@ -186,7 +188,6 @@ public class EditProfileActivity extends AppCompatActivity {
             }
         }).start();
 
-
         // Initialize password visibility toggle
         ImageView togglePasswordVisibility = findViewById(R.id.toggle_password_visibility);
 
@@ -203,6 +204,116 @@ public class EditProfileActivity extends AppCompatActivity {
             newPasswordInput.setSelection(newPasswordInput.getText().length()); // Set cursor at the end
         });
     }
+
+
+
+
+
+
+
+
+
+
+//    private void fetchUserData() {
+//        new Thread(() -> {
+//            try {
+//                OkHttpClient client = new OkHttpClient();
+//
+//                // Fetch user data from the signup table
+//                String userUrl = SUPABASE_URL + "/rest/v1/signup?select=*&id=eq." + userId;
+//                Request userRequest = new Request.Builder()
+//                        .url(userUrl)
+//                        .addHeader("apikey", SUPABASE_KEY)
+//                        .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
+//                        .get()
+//                        .build();
+//
+//                Response userResponse = client.newCall(userRequest).execute();
+//                if (userResponse.isSuccessful() && userResponse.body() != null) {
+//                    String responseBody = userResponse.body().string();
+//                    Log.d(TAG, "User data fetched successfully: " + responseBody);
+//
+//                    JSONArray userArray = new JSONArray(responseBody);
+//                    if (userArray.length() > 0) {
+//                        JSONObject userData = userArray.getJSONObject(0);
+//                        originalUsername = userData.getString("username");
+//                        originalEmail = userData.getString("emailid");
+//                        originalPassword = userData.getString("password");
+//                        profileImageUrl = userData.optString("image", null);
+//
+//                        runOnUiThread(() -> {
+//                            usernameInput.setText(originalUsername);
+//                            emailInput.setText(originalEmail);
+//
+//                            // Fetch and display profile picture
+//                            if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
+//                                fetchProfileImage(profileImageUrl);
+//                            }
+//                        });
+//                    }
+//                } else {
+//                    Log.e(TAG, "Failed to fetch user data: " + userResponse.message());
+//                    runOnUiThread(() -> Toast.makeText(this, "Failed to fetch user data", Toast.LENGTH_SHORT).show());
+//                }
+//
+//                // Fetch emergency contact data from the emergency_contacts table
+//                String contactUrl = SUPABASE_URL + "/rest/v1/emergency_contacts?select=*&user_id=eq." + userId;
+//                Request contactRequest = new Request.Builder()
+//                        .url(contactUrl)
+//                        .addHeader("apikey", SUPABASE_KEY)
+//                        .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
+//                        .get()
+//                        .build();
+//
+//                Response contactResponse = client.newCall(contactRequest).execute();
+//                if (contactResponse.isSuccessful() && contactResponse.body() != null) {
+//                    String responseBody = contactResponse.body().string();
+//                    Log.d(TAG, "Emergency contact data fetched successfully: " + responseBody);
+//
+//                    JSONArray contactArray = new JSONArray(responseBody);
+//                    if (contactArray.length() > 0) {
+//                        JSONObject contactData = contactArray.getJSONObject(0);
+//                        originalContactName = contactData.optString("contact_name", "");
+//                        originalContactNumber = contactData.optString("contact_number", "");
+//
+//                        runOnUiThread(() -> {
+//                            emergencyContactNameInput.setText(originalContactName.isEmpty() ? "Not Updated" : originalContactName);
+//                            emergencyPhoneNumberInput.setText(originalContactNumber.isEmpty() ? "Not Updated" : originalContactNumber);
+//                        });
+//                    } else {
+//                        runOnUiThread(() -> {
+//                            emergencyContactNameInput.setHint("Not Updated");
+//                            emergencyPhoneNumberInput.setHint("Not Updated");
+//                        });
+//                    }
+//                } else {
+//                    Log.e(TAG, "Failed to fetch emergency contact data: " + contactResponse.message());
+//                    runOnUiThread(() -> Toast.makeText(this, "Failed to fetch emergency contact data", Toast.LENGTH_SHORT).show());
+//                }
+//
+//            } catch (Exception e) {
+//                Log.e(TAG, "Error fetching user data: " + e.getMessage(), e);
+//                runOnUiThread(() -> Toast.makeText(this, "Error fetching user data", Toast.LENGTH_SHORT).show());
+//            }
+//        }).start();
+//
+//
+//        // Initialize password visibility toggle
+//        ImageView togglePasswordVisibility = findViewById(R.id.toggle_password_visibility);
+//
+//        togglePasswordVisibility.setOnClickListener(v -> {
+//            if (newPasswordInput.getInputType() == (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
+//                // Show password
+//                newPasswordInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+//                togglePasswordVisibility.setImageResource(R.drawable.eyeopen); // Use the "eye open" icon
+//            } else {
+//                // Hide password
+//                newPasswordInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+//                togglePasswordVisibility.setImageResource(R.drawable.eye); // Use the "eye closed" icon
+//            }
+//            newPasswordInput.setSelection(newPasswordInput.getText().length()); // Set cursor at the end
+//        });
+//    }
 
 
     private void fetchProfileImage(String imageUrl) {
@@ -562,14 +673,17 @@ public class EditProfileActivity extends AppCompatActivity {
                 }
 
                 // Update or insert emergency contacts
+                // Update or insert emergency contacts
                 String contactName = emergencyContactNameInput.getText().toString().trim();
                 String contactNumber = emergencyPhoneNumberInput.getText().toString().trim();
+
                 if (!TextUtils.isEmpty(contactName) || !TextUtils.isEmpty(contactNumber)) {
                     Log.d(TAG, "Attempting to update or insert emergency contact...");
                     updateOrInsertEmergencyContact(contactName, contactNumber);
                 } else {
-                    Log.d(TAG, "No emergency contact details to update.");
+                    Log.d(TAG, "No emergency contact details provided.");
                 }
+
 
                 // Determine redirection behavior based on whether the password was updated
                 if (isPasswordUpdated) {
@@ -591,6 +705,74 @@ public class EditProfileActivity extends AppCompatActivity {
             }
         }).start();
     }
+
+
+
+
+    private void updateOrInsertEmergencyContact(String contactName, String contactNumber) {
+        new Thread(() -> {
+            try {
+                OkHttpClient client = new OkHttpClient();
+
+                // Check if emergency contact already exists
+                String contactUrl = SUPABASE_URL + "/rest/v1/emergency_contacts?select=*&user_id=eq." + userId;
+                Request checkRequest = new Request.Builder()
+                        .url(contactUrl)
+                        .addHeader("apikey", SUPABASE_KEY)
+                        .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
+                        .get()
+                        .build();
+
+                Response checkResponse = client.newCall(checkRequest).execute();
+                if (checkResponse.isSuccessful() && checkResponse.body() != null) {
+                    String responseBody = checkResponse.body().string();
+                    JSONArray array = new JSONArray(responseBody);
+
+                    JSONObject json = new JSONObject();
+                    json.put("user_id", userId);
+                    json.put("contact_name", contactName);
+                    json.put("contact_number", contactNumber);
+
+                    RequestBody body = RequestBody.create(json.toString(), MediaType.parse("application/json"));
+                    String url;
+                    Request.Builder builder = new Request.Builder()
+                            .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
+                            .addHeader("apikey", SUPABASE_KEY);
+
+                    if (array.length() > 0) {
+                        // If contact exists, update it
+                        url = SUPABASE_URL + "/rest/v1/emergency_contacts?user_id=eq." + userId;
+                        builder.url(url).patch(body);
+                    } else {
+                        // If no contact exists, insert new one
+                        url = SUPABASE_URL + "/rest/v1/emergency_contacts";
+                        builder.url(url).post(body);
+                    }
+
+                    Response response = client.newCall(builder.build()).execute();
+                    if (response.isSuccessful()) {
+                        Log.d(TAG, "Emergency contact successfully updated/inserted.");
+                        runOnUiThread(() -> Toast.makeText(this, "Emergency contact saved!", Toast.LENGTH_SHORT).show());
+                    } else {
+                        Log.e(TAG, "Failed to update/insert emergency contact: " + response.message());
+                        runOnUiThread(() -> Toast.makeText(this, "Failed to save emergency contact.", Toast.LENGTH_SHORT).show());
+                    }
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating or inserting emergency contact", e);
+                runOnUiThread(() -> Toast.makeText(this, "Error updating emergency contact.", Toast.LENGTH_SHORT).show());
+            }
+        }).start();
+    }
+
+
+
+
+
+
+
+
     private void navigateToProfile() {
         Intent intent = new Intent(EditProfileActivity.this, ProfileActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -827,72 +1009,72 @@ public class EditProfileActivity extends AppCompatActivity {
 //    }
 
 
-    private void updateOrInsertEmergencyContact(String contactName, String contactNumber) {
-        new Thread(() -> {
-            try {
-                OkHttpClient client = new OkHttpClient();
-
-                // Check if the contact exists
-                String contactUrl = SUPABASE_URL + "/rest/v1/emergency_contacts?select=*&user_id=eq." + userId;
-                Log.d(TAG, "Emergency contact API URL: " + contactUrl);
-
-                Request checkRequest = new Request.Builder()
-                        .url(contactUrl)
-                        .addHeader("apikey", SUPABASE_KEY)
-                        .get()
-                        .build();
-
-                Response checkResponse = client.newCall(checkRequest).execute();
-                if (checkResponse.isSuccessful() && checkResponse.body() != null) {
-                    String responseBody = checkResponse.body().string();
-                    JSONArray array = new JSONArray(responseBody);
-
-                    JSONObject json = new JSONObject();
-                    json.put("contact_name", contactName);
-                    json.put("contact_number", contactNumber);
-
-                    // Log the payload
-                    Log.d(TAG, "Emergency contact payload: " + json.toString());
-
-                    RequestBody body = RequestBody.create(json.toString(), MediaType.parse("application/json"));
-                    String method = array.length() > 0 ? "PATCH" : "POST";
-                    String url = method.equals("PATCH") ?
-                            SUPABASE_URL + "/rest/v1/emergency_contacts?user_id=eq." + userId :
-                            SUPABASE_URL + "/rest/v1/emergency_contacts";
-
-                    Request.Builder builder = new Request.Builder()
-                            .url(url)
-                            .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
-                            .addHeader("apikey", SUPABASE_KEY);
-
-                    if (method.equals("PATCH")) {
-                        builder.patch(body);
-                    } else {
-                        builder.post(body);
-                    }
-
-                    Response response = client.newCall(builder.build()).execute();
-
-                    // Log detailed response information
-                    Log.d(TAG, "Emergency contact response code: " + response.code());
-                    Log.d(TAG, "Emergency contact response body: " + (response.body() != null ? response.body().string() : "null"));
-
-                    if (response.isSuccessful()) {
-                        Log.d(TAG, "Emergency contact successfully updated/inserted.");
-                        runOnUiThread(() -> Toast.makeText(this, "Emergency contact updated successfully!", Toast.LENGTH_SHORT).show());
-                    } else {
-                        Log.e(TAG, "Failed to update/insert emergency contact: " + response.message());
-                        runOnUiThread(() -> Toast.makeText(this, "Failed to update emergency contact.", Toast.LENGTH_SHORT).show());
-                    }
-                } else {
-                    Log.e(TAG, "Failed to fetch existing emergency contact: " + checkResponse.message());
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Error updating or inserting emergency contact", e);
-                runOnUiThread(() -> Toast.makeText(this, "Error updating emergency contact.", Toast.LENGTH_SHORT).show());
-            }
-        }).start();
-    }
+//    private void updateOrInsertEmergencyContact(String contactName, String contactNumber) {
+//        new Thread(() -> {
+//            try {
+//                OkHttpClient client = new OkHttpClient();
+//
+//                // Check if the contact exists
+//                String contactUrl = SUPABASE_URL + "/rest/v1/emergency_contacts?select=*&user_id=eq." + userId;
+//                Log.d(TAG, "Emergency contact API URL: " + contactUrl);
+//
+//                Request checkRequest = new Request.Builder()
+//                        .url(contactUrl)
+//                        .addHeader("apikey", SUPABASE_KEY)
+//                        .get()
+//                        .build();
+//
+//                Response checkResponse = client.newCall(checkRequest).execute();
+//                if (checkResponse.isSuccessful() && checkResponse.body() != null) {
+//                    String responseBody = checkResponse.body().string();
+//                    JSONArray array = new JSONArray(responseBody);
+//
+//                    JSONObject json = new JSONObject();
+//                    json.put("contact_name", contactName);
+//                    json.put("contact_number", contactNumber);
+//
+//                    // Log the payload
+//                    Log.d(TAG, "Emergency contact payload: " + json.toString());
+//
+//                    RequestBody body = RequestBody.create(json.toString(), MediaType.parse("application/json"));
+//                    String method = array.length() > 0 ? "PATCH" : "POST";
+//                    String url = method.equals("PATCH") ?
+//                            SUPABASE_URL + "/rest/v1/emergency_contacts?user_id=eq." + userId :
+//                            SUPABASE_URL + "/rest/v1/emergency_contacts";
+//
+//                    Request.Builder builder = new Request.Builder()
+//                            .url(url)
+//                            .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
+//                            .addHeader("apikey", SUPABASE_KEY);
+//
+//                    if (method.equals("PATCH")) {
+//                        builder.patch(body);
+//                    } else {
+//                        builder.post(body);
+//                    }
+//
+//                    Response response = client.newCall(builder.build()).execute();
+//
+//                    // Log detailed response information
+//                    Log.d(TAG, "Emergency contact response code: " + response.code());
+//                    Log.d(TAG, "Emergency contact response body: " + (response.body() != null ? response.body().string() : "null"));
+//
+//                    if (response.isSuccessful()) {
+//                        Log.d(TAG, "Emergency contact successfully updated/inserted.");
+//                        runOnUiThread(() -> Toast.makeText(this, "Emergency contact updated successfully!", Toast.LENGTH_SHORT).show());
+//                    } else {
+//                        Log.e(TAG, "Failed to update/insert emergency contact: " + response.message());
+//                        runOnUiThread(() -> Toast.makeText(this, "Failed to update emergency contact.", Toast.LENGTH_SHORT).show());
+//                    }
+//                } else {
+//                    Log.e(TAG, "Failed to fetch existing emergency contact: " + checkResponse.message());
+//                }
+//            } catch (Exception e) {
+//                Log.e(TAG, "Error updating or inserting emergency contact", e);
+//                runOnUiThread(() -> Toast.makeText(this, "Error updating emergency contact.", Toast.LENGTH_SHORT).show());
+//            }
+//        }).start();
+//    }
 
 
     private void updateImageUrlInDatabase(String imageUrl) {
