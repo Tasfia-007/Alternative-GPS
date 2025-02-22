@@ -44,12 +44,18 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation(libs.play.services.maps)
     implementation(libs.car.ui.lib)
+    implementation(libs.play.services.location)
     androidTestImplementation(libs.ext.junit)
 
     androidTestImplementation(libs.espresso.core)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+
+    implementation(libs.gson)
+
+    implementation(libs.glide)
+
 
 
 }
