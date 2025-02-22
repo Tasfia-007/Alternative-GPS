@@ -11,4 +11,12 @@
     <string name="zoom_in">Zoom In</string>
     <string name="zoom_out">Zoom Out</string>
     <string name="direction">Direction</string>
+    <string name="openweathermap_api">902d845de7f5de16ecc661bd23826128</string>
+
+    <string-array name="travel_modes">
+        <item>driving</item>
+        <item>walking</item>
+        <item>cycling</item>
+    </string-array>
+
 </resources>

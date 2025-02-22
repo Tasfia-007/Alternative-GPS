@@ -84,6 +84,7 @@
             </LinearLayout>
 
             <!-- Category Scroll Bar -->
+            <!-- Category Scroll Bar -->
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -102,7 +103,9 @@
                         android:layout_height="wrap_content"
                         android:text="Hospitals"
                         android:padding="10dp"
-                        android:background="@drawable/rounded_button"/>
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/rounded_button"
+                        android:alpha="0.7"/> <!-- 70% visible (30% transparent) -->
 
                     <Button
                         android:id="@+id/btn_banks"
@@ -110,7 +113,9 @@
                         android:layout_height="wrap_content"
                         android:text="Banks"
                         android:padding="10dp"
-                        android:background="@drawable/rounded_button"/>
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/rounded_button"
+                        android:alpha="0.7"/> <!-- Adjust opacity -->
 
                     <Button
                         android:id="@+id/btn_schools"
@@ -118,9 +123,54 @@
                         android:layout_height="wrap_content"
                         android:text="Schools"
                         android:padding="10dp"
-                        android:background="@drawable/rounded_button"/>
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/rounded_button"
+                        android:alpha="0.7"/>
+
+
+                    <Button
+                        android:id="@+id/btn_police"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Police Stations"
+                        android:padding="10dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/rounded_button"
+                        android:alpha="0.7"/>
+
+                    <Button
+                        android:id="@+id/btn_gas_stations"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Gas Stations"
+                        android:padding="10dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/rounded_button"
+                        android:alpha="0.7"/>
+
+                    <Button
+                        android:id="@+id/btn_atms"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ATMs"
+                        android:padding="10dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/rounded_button"
+                        android:alpha="0.7"/>
+
+                    <Button
+                        android:id="@+id/btn_libraries"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Libraries"
+                        android:padding="10dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/rounded_button"
+                        android:alpha="0.7"/>
+
                 </LinearLayout>
             </HorizontalScrollView>
+
         </LinearLayout>
 
         <!-- Bottom Slide-Up Panel -->
