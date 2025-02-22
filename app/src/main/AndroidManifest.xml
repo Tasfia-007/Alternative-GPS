@@ -59,6 +59,12 @@
             </intent-filter>
         </activity>
 
+
+        <activity
+            android:name=".WeatherActivity"
+            android:exported="true" />
+
+
     </application>
 
 </manifest>

@@ -4,8 +4,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.LocationManager;
@@ -193,8 +196,10 @@ public class MainActivity extends AppCompatActivity {
                 } else if (itemId == R.id.home) {
                     Toast.makeText(this, "Home clicked", Toast.LENGTH_SHORT).show();
                     return true;
-                } else if (itemId == R.id.traffic_updates) {
-                    Toast.makeText(this, "Traffic Updates clicked", Toast.LENGTH_SHORT).show();
+                } else  if (itemId == R.id.weather) {
+                    // Navigate to WeatherActivity
+                    Intent intent = new Intent(MainActivity.this, WeatherActivity.class);
+                    startActivity(intent);
                     return true;
                 } else if (itemId == R.id.report_issue) {
                     Toast.makeText(this, "Report Issue clicked", Toast.LENGTH_SHORT).show();
@@ -214,16 +219,20 @@ public class MainActivity extends AppCompatActivity {
 
 //for map location
 
-        setupLocationOverlay();
 
-        // Initialize Location Box
-        setupLocationBox();
 
-        // Add touch event listener for the map
-        setupTouchListener();
+
+
+
+
+
 
 
     }
+
+
+
+
     private TextView locationBox;
 
     // Initialize the box to display tapped location name
@@ -515,13 +524,20 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private static final int MAX_MARKERS_PER_CATEGORY = 1000; // Adjust the number as needed
 
 
     private void setupCategoryButtons() {
         findViewById(R.id.btn_hospitals).setOnClickListener(v -> showPOI(hospitalMarkers));
         findViewById(R.id.btn_banks).setOnClickListener(v -> showPOI(bankMarkers));
         findViewById(R.id.btn_schools).setOnClickListener(v -> showPOI(schoolMarkers));
+        findViewById(R.id.btn_police).setOnClickListener(v -> showPOI(policeMarkers));
+        findViewById(R.id.btn_gas_stations).setOnClickListener(v -> showPOI(gasStationMarkers));
+
+        findViewById(R.id.btn_atms).setOnClickListener(v -> showPOI(atmMarkers));
+        findViewById(R.id.btn_libraries).setOnClickListener(v -> showPOI(libraryMarkers));
     }
+
 
     private void showPOI(List<Marker> markers) {
         mapView.getOverlays().clear();
@@ -530,19 +546,104 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    private void displayPOIs(String jsonResponse) {
+        try {
+            JSONObject jsonObject = new JSONObject(jsonResponse);
+            JSONArray elements = jsonObject.getJSONArray("elements");
+
+            int hospitalCount = 0, bankCount = 0, schoolCount = 0, policeCount = 0;
+            int gasStationCount = 0, shoppingMallCount = 0, atmCount = 0, libraryCount = 0;
+
+            for (int i = 0; i < elements.length(); i++) {
+                JSONObject element = elements.getJSONObject(i);
+                double lat = element.getDouble("lat");
+                double lon = element.getDouble("lon");
+                String type = element.optJSONObject("tags").optString("amenity", "Unknown");
+
+                Marker marker = new Marker(mapView);
+                marker.setPosition(new GeoPoint(lat, lon));
+                marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+
+                // Set and scale icons
+                Drawable icon = null;
+                switch (type) {
+                    case "hospital":
+                        if (hospitalCount++ < MAX_MARKERS_PER_CATEGORY)
+                            icon = resizeIcon(R.drawable.marker_hospital, 32, 32);
+                        hospitalMarkers.add(marker);
+                        break;
+                    case "bank":
+                        if (bankCount++ < MAX_MARKERS_PER_CATEGORY)
+                            icon = resizeIcon(R.drawable.marker_bank, 32, 32);
+                        bankMarkers.add(marker);
+                        break;
+                    case "school":
+                        if (schoolCount++ < MAX_MARKERS_PER_CATEGORY)
+                            icon = resizeIcon(R.drawable.marker_school, 32, 32);
+                        schoolMarkers.add(marker);
+                        break;
+                    case "police":
+                        if (policeCount++ < MAX_MARKERS_PER_CATEGORY)
+                            icon = resizeIcon(R.drawable.marker_police, 32, 32);
+                        policeMarkers.add(marker);
+                        break;
+                    case "fuel":  // Gas Station
+                        if (gasStationCount++ < MAX_MARKERS_PER_CATEGORY)
+                            icon = resizeIcon(R.drawable.marker_gas_station, 32, 32);
+                        gasStationMarkers.add(marker);
+                        break;
+                    case "atm":
+                        if (atmCount++ < MAX_MARKERS_PER_CATEGORY)
+                            icon = resizeIcon(R.drawable.marker_atm, 32, 32);
+                        atmMarkers.add(marker);
+                        break;
+                    case "library":
+                        if (libraryCount++ < MAX_MARKERS_PER_CATEGORY)
+                            icon = resizeIcon(R.drawable.marker_library, 32, 32);
+                        libraryMarkers.add(marker);
+                        break;
+
+                }
+
+                if (icon != null) marker.setIcon(icon);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error parsing POIs", e);
+        }
+    }
+
+
+    private Drawable resizeIcon(int drawableId, int width, int height) {
+        Drawable drawable = ContextCompat.getDrawable(this, drawableId);
+        Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
+        Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false);
+        return new BitmapDrawable(getResources(), resizedBitmap);
+    }
+
 
 
     // Store POIs by category
     private List<Marker> hospitalMarkers = new ArrayList<>();
     private List<Marker> bankMarkers = new ArrayList<>();
     private List<Marker> schoolMarkers = new ArrayList<>();
+    private List<Marker> policeMarkers = new ArrayList<>();
+    private List<Marker> gasStationMarkers = new ArrayList<>();
+    private List<Marker> shoppingMallMarkers = new ArrayList<>();
+    private List<Marker> atmMarkers = new ArrayList<>();
+    private List<Marker> libraryMarkers = new ArrayList<>();
 
-    // Fetch POIs like hospitals, banks, and schools from Overpass API
+    // Fetch POIs including police stations, gas stations, shopping malls, ATMs, and libraries
     private void fetchPOIs() {
         String overpassUrl = "http://overpass-api.de/api/interpreter?data=[out:json];" +
                 "(node[amenity=hospital](23.7,90.3,23.9,90.5);" +
                 "node[amenity=bank](23.7,90.3,23.9,90.5);" +
-                "node[amenity=school](23.7,90.3,23.9,90.5););out;";
+                "node[amenity=school](23.7,90.3,23.9,90.5);" +
+                "node[amenity=police](23.7,90.3,23.9,90.5);" +
+                "node[amenity=fuel](23.7,90.3,23.9,90.5);" +
+                "node[shop=mall](23.7,90.3,23.9,90.5);" +
+                "node[amenity=atm](23.7,90.3,23.9,90.5);" +
+                "node[amenity=library](23.7,90.3,23.9,90.5);" +
+                ");out;";
 
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder().url(overpassUrl).build();
@@ -561,39 +662,55 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Method to parse and categorize POIs
-    private void displayPOIs(String jsonResponse) {
-        try {
-            JSONObject jsonObject = new JSONObject(jsonResponse);
-            JSONArray elements = jsonObject.getJSONArray("elements");
-
-            for (int i = 0; i < elements.length(); i++) {
-                JSONObject element = elements.getJSONObject(i);
-                double lat = element.getDouble("lat");
-                double lon = element.getDouble("lon");
-                String type = element.optJSONObject("tags").optString("amenity", "Unknown");
-
-                Marker marker = new Marker(mapView);
-                marker.setPosition(new GeoPoint(lat, lon));
-                marker.setTitle(type);
-                marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-
-                switch (type) {
-                    case "hospital":
-                        hospitalMarkers.add(marker);
-                        break;
-                    case "bank":
-                        bankMarkers.add(marker);
-                        break;
-                    case "school":
-                        schoolMarkers.add(marker);
-                        break;
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error parsing POIs", e);
-        }
-    }
-
+//    private void displayPOIs(String jsonResponse) {
+//        try {
+//            JSONObject jsonObject = new JSONObject(jsonResponse);
+//            JSONArray elements = jsonObject.getJSONArray("elements");
+//
+//            for (int i = 0; i < elements.length(); i++) {
+//                JSONObject element = elements.getJSONObject(i);
+//                double lat = element.getDouble("lat");
+//                double lon = element.getDouble("lon");
+//                String type = element.optJSONObject("tags").optString("amenity", "Unknown");
+//
+//                Marker marker = new Marker(mapView);
+//                marker.setPosition(new GeoPoint(lat, lon));
+//                marker.setTitle(type);
+//                marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+//
+//                switch (type) {
+//                    case "hospital":
+//                        hospitalMarkers.add(marker);
+//                        break;
+//                    case "bank":
+//                        bankMarkers.add(marker);
+//                        break;
+//                    case "school":
+//                        schoolMarkers.add(marker);
+//                        break;
+//                    case "police":
+//                        policeMarkers.add(marker);
+//                        break;
+//                    case "fuel":  // Gas Station
+//                        gasStationMarkers.add(marker);
+//                        break;
+//                    case "atm":
+//                        atmMarkers.add(marker);
+//                        break;
+//                    case "library":
+//                        libraryMarkers.add(marker);
+//                        break;
+//                    case "shopping_mall":
+//                    case "mall":
+//                        shoppingMallMarkers.add(marker);
+//                        break;
+//                }
+//            }
+//        } catch (Exception e) {
+//            Log.e(TAG, "Error parsing POIs", e);
+//        }
+//    }
+//
 
     // Method to calculate a route between two points
     private void calculateRoute(GeoPoint startPoint, GeoPoint endPoint) {
