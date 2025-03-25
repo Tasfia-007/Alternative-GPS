@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.gson)
 
     implementation(libs.glide)
+    implementation(libs.opencsv)
 
 
 
