@@ -5,10 +5,12 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.VectorDrawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.LocationManager;
@@ -202,9 +204,12 @@ public class MainActivity extends AppCompatActivity {
                     startActivity(intent);
                     return true;
                 } else if (itemId == R.id.report_issue) {
-                    Toast.makeText(this, "Report Issue clicked", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(MainActivity.this, ReportIssueActivity.class);
+                    startActivity(intent);
                     return true;
-                } else if (itemId == R.id.settings) {
+
+
+            } else if (itemId == R.id.settings) {
                     Toast.makeText(this, "Settings clicked", Toast.LENGTH_SHORT).show();
                     return true;
                 } else if (itemId == R.id.help) {
@@ -223,7 +228,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
+        setupMapTouchListener();
 
 
 
@@ -233,70 +238,85 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    private TextView locationBox;
 
-    // Initialize the box to display tapped location name
-    private void setupLocationBox() {
-        locationBox = new TextView(this);
-        locationBox.setVisibility(View.GONE);
-        locationBox.setBackgroundColor(Color.parseColor("#AA000000")); // Semi-transparent black
-        locationBox.setTextColor(Color.WHITE);
-        locationBox.setPadding(20, 10, 20, 10);
-        locationBox.setTextSize(16);
-
-        // Add to the main layout
-        FrameLayout layout = findViewById(R.id.main_layout);
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT
-        );
-        params.setMargins(50, 50, 0, 0);
-        locationBox.setLayoutParams(params);
-        layout.addView(locationBox);
-    }
 
     // Set up touch listener for the map
-    private void setupTouchListener() {
-        MapEventsOverlay overlay = new MapEventsOverlay(new org.osmdroid.events.MapEventsReceiver() {
-            @Override
-            public boolean singleTapConfirmedHelper(GeoPoint p) {
-                showLocationName(p);
-                return true;
-            }
 
-            @Override
-            public boolean longPressHelper(GeoPoint p) {
-                return false;
-            }
-        });
+//    private void setupMapTouchListener() {
+//        MapEventsOverlay mapEventsOverlay = new MapEventsOverlay(new MapEventsReceiver() {
+//            @Override
+//            public boolean singleTapConfirmedHelper(GeoPoint p) {
+//                displayLocationInfo(p); // Now it works correctly
+//                return true;
+//            }
+//
+//            @Override
+//            public boolean longPressHelper(GeoPoint p) {
+//                return false;
+//            }
+//        });
+//
+//        mapView.getOverlays().add(mapEventsOverlay);
+//    }
 
-        mapView.getOverlays().add(overlay);
-    }
-
-    // Fetch and show location name on touch
-    private void showLocationName(GeoPoint geoPoint) {
+    private void displayLocationInfo(GeoPoint geoPoint) {
+        // Reverse geocode to get location name
         String locationName = getLocationName(geoPoint);
-        if (locationName.isEmpty()) {
-            locationName = "Unknown Location";
-        }
 
-        // Show marker at the tapped location
+        // Create a new marker
         Marker marker = new Marker(mapView);
         marker.setPosition(geoPoint);
-        marker.setTitle(locationName);
+        marker.setTitle(locationName + "\nLat: " + geoPoint.getLatitude() + "\nLon: " + geoPoint.getLongitude());
         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        mapView.getOverlays().add(marker);
-        mapView.invalidate(); // Refresh the map
 
-        // Show the box with location name
-        locationBox.setText(locationName);
-        locationBox.setVisibility(View.VISIBLE);
+        // Dynamically resize the icon based on zoom level
+        float zoomLevel = (float) mapView.getZoomLevelDouble();
+        int iconSize = (int) (zoomLevel * 5); // Adjust multiplier as needed
+        Drawable resizedIcon = resizeDrawable(R.drawable.loc, iconSize, iconSize);
+        marker.setIcon(resizedIcon);
+
+        // Add marker to map
+        mapView.getOverlays().add(marker);
+        mapView.invalidate();
+
+        // Show info window
+        marker.showInfoWindow();
+
+        // Remove marker after 4 seconds
+        new Handler().postDelayed(() -> {
+            marker.closeInfoWindow(); // Hide info box
+            mapView.getOverlays().remove(marker); // Remove marker
+            mapView.invalidate();
+        }, 4000); // 4 seconds
     }
 
 
 
+    private Drawable resizeDrawable(int drawableId, int width, int height) {
+        Drawable drawable = ContextCompat.getDrawable(this, drawableId);
+        if (drawable == null) return null;
+
+        // If the drawable is already a BitmapDrawable, resize it
+        if (drawable instanceof BitmapDrawable) {
+            Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
+            Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false);
+            return new BitmapDrawable(getResources(), resizedBitmap);
+        }
+        // If it's a VectorDrawable, convert it to a Bitmap and resize
+        else if (drawable instanceof VectorDrawable) {
+            return getBitmapFromVector(drawable, width, height);
+        }
+        return drawable; // Return original if not handled
+    }
 
 
+    private Drawable getBitmapFromVector(Drawable vectorDrawable, int width, int height) {
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        vectorDrawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        vectorDrawable.draw(canvas);
+        return new BitmapDrawable(getResources(), bitmap);
+    }
 
 
 
@@ -528,22 +548,87 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void setupCategoryButtons() {
-        findViewById(R.id.btn_hospitals).setOnClickListener(v -> showPOI(hospitalMarkers));
-        findViewById(R.id.btn_banks).setOnClickListener(v -> showPOI(bankMarkers));
-        findViewById(R.id.btn_schools).setOnClickListener(v -> showPOI(schoolMarkers));
-        findViewById(R.id.btn_police).setOnClickListener(v -> showPOI(policeMarkers));
-        findViewById(R.id.btn_gas_stations).setOnClickListener(v -> showPOI(gasStationMarkers));
-
-        findViewById(R.id.btn_atms).setOnClickListener(v -> showPOI(atmMarkers));
-        findViewById(R.id.btn_libraries).setOnClickListener(v -> showPOI(libraryMarkers));
+        findViewById(R.id.btn_hospitals).setOnClickListener(v -> showPOI(hospitalMarkers, isHospitalVisible, "hospital"));
+        findViewById(R.id.btn_banks).setOnClickListener(v -> showPOI(bankMarkers, isBankVisible, "bank"));
+        findViewById(R.id.btn_schools).setOnClickListener(v -> showPOI(schoolMarkers, isSchoolVisible, "school"));
+        findViewById(R.id.btn_police).setOnClickListener(v -> showPOI(policeMarkers, isPoliceVisible, "police"));
+        findViewById(R.id.btn_gas_stations).setOnClickListener(v -> showPOI(gasStationMarkers, isGasStationVisible, "gas"));
+        findViewById(R.id.btn_atms).setOnClickListener(v -> showPOI(atmMarkers, isAtmVisible, "atm"));
+        findViewById(R.id.btn_libraries).setOnClickListener(v -> showPOI(libraryMarkers, isLibraryVisible, "library"));
     }
 
+    // Track if each category is currently visible
+    private boolean isHospitalVisible = false;
+    private boolean isBankVisible = false;
+    private boolean isSchoolVisible = false;
+    private boolean isPoliceVisible = false;
+    private boolean isGasStationVisible = false;
+    private boolean isAtmVisible = false;
+    private boolean isLibraryVisible = false;
 
-    private void showPOI(List<Marker> markers) {
-        mapView.getOverlays().clear();
-        mapView.getOverlays().addAll(markers);
+
+    private void showPOI(List<Marker> markers, boolean isVisible, String category) {
+        if (isVisible) {
+            // If already visible, remove these POIs
+            mapView.getOverlays().removeIf(overlay -> markers.contains(overlay));
+            isVisible = false;
+        } else {
+            // Add POIs only if they were not visible before
+            mapView.getOverlays().addAll(markers);
+            isVisible = true;
+        }
+
+        // Ensure location overlay remains on the map
+        if (locationOverlay != null) {
+            mapView.getOverlays().add(locationOverlay);
+        }
+
+        // Ensure touch events remain
+        mapView.getOverlays().add(new MapEventsOverlay(mapTouchReceiver));
+
+        // Refresh map
         mapView.invalidate();
+
+        // Update visibility flags
+        switch (category) {
+            case "hospital": isHospitalVisible = isVisible; break;
+            case "bank": isBankVisible = isVisible; break;
+            case "school": isSchoolVisible = isVisible; break;
+            case "police": isPoliceVisible = isVisible; break;
+            case "gas": isGasStationVisible = isVisible; break;
+            case "atm": isAtmVisible = isVisible; break;
+            case "library": isLibraryVisible = isVisible; break;
+        }
     }
+
+
+
+
+
+
+    private MapEventsOverlay mapTouchListener;
+    private MapEventsReceiver mapTouchReceiver;
+
+//    private MapEventsOverlay mapTouchListener;
+
+    private void setupMapTouchListener() {
+        mapTouchReceiver = new MapEventsReceiver() {
+            @Override
+            public boolean singleTapConfirmedHelper(GeoPoint p) {
+                displayLocationInfo(p);
+                return true;
+            }
+
+            @Override
+            public boolean longPressHelper(GeoPoint p) {
+                return false;
+            }
+        };
+
+        mapView.getOverlays().add(new MapEventsOverlay(mapTouchReceiver));
+    }
+
+
 
 
     private void displayPOIs(String jsonResponse) {
@@ -565,47 +650,51 @@ public class MainActivity extends AppCompatActivity {
                 marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
 
                 // Set and scale icons
+                // Set and scale icons based on zoom level
+                float zoomLevel = (float) mapView.getZoomLevelDouble();
+                int iconSize = (int) (zoomLevel * 5); // Dynamically scale size based on zoom
+
                 Drawable icon = null;
                 switch (type) {
                     case "hospital":
                         if (hospitalCount++ < MAX_MARKERS_PER_CATEGORY)
-                            icon = resizeIcon(R.drawable.marker_hospital, 32, 32);
+                            icon = resizeIcon(R.drawable.hos, iconSize, iconSize);
                         hospitalMarkers.add(marker);
                         break;
                     case "bank":
                         if (bankCount++ < MAX_MARKERS_PER_CATEGORY)
-                            icon = resizeIcon(R.drawable.marker_bank, 32, 32);
+                            icon = resizeIcon(R.drawable.bank, iconSize, iconSize);
                         bankMarkers.add(marker);
                         break;
                     case "school":
                         if (schoolCount++ < MAX_MARKERS_PER_CATEGORY)
-                            icon = resizeIcon(R.drawable.marker_school, 32, 32);
+                            icon = resizeIcon(R.drawable.schl, iconSize, iconSize);
                         schoolMarkers.add(marker);
                         break;
                     case "police":
                         if (policeCount++ < MAX_MARKERS_PER_CATEGORY)
-                            icon = resizeIcon(R.drawable.marker_police, 32, 32);
+                            icon = resizeIcon(R.drawable.police, iconSize, iconSize);
                         policeMarkers.add(marker);
                         break;
                     case "fuel":  // Gas Station
                         if (gasStationCount++ < MAX_MARKERS_PER_CATEGORY)
-                            icon = resizeIcon(R.drawable.marker_gas_station, 32, 32);
+                            icon = resizeIcon(R.drawable.gas, iconSize, iconSize);
                         gasStationMarkers.add(marker);
                         break;
                     case "atm":
                         if (atmCount++ < MAX_MARKERS_PER_CATEGORY)
-                            icon = resizeIcon(R.drawable.marker_atm, 32, 32);
+                            icon = resizeIcon(R.drawable.atm, iconSize, iconSize);
                         atmMarkers.add(marker);
                         break;
                     case "library":
                         if (libraryCount++ < MAX_MARKERS_PER_CATEGORY)
-                            icon = resizeIcon(R.drawable.marker_library, 32, 32);
+                            icon = resizeIcon(R.drawable.lib, iconSize, iconSize);
                         libraryMarkers.add(marker);
                         break;
-
                 }
 
                 if (icon != null) marker.setIcon(icon);
+
             }
         } catch (Exception e) {
             Log.e(TAG, "Error parsing POIs", e);
@@ -615,10 +704,22 @@ public class MainActivity extends AppCompatActivity {
 
     private Drawable resizeIcon(int drawableId, int width, int height) {
         Drawable drawable = ContextCompat.getDrawable(this, drawableId);
-        Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
-        Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false);
-        return new BitmapDrawable(getResources(), resizedBitmap);
+        if (drawable == null) return null;
+
+        // Handle PNGs (BitmapDrawable)
+        if (drawable instanceof BitmapDrawable) {
+            Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
+            Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false);
+            return new BitmapDrawable(getResources(), resizedBitmap);
+        }
+        // Handle SVGs (VectorDrawable)
+        else if (drawable instanceof VectorDrawable) {
+            return getBitmapFromVector(drawable, width, height);
+        }
+
+        return drawable; // Return original if not handled
     }
+
 
 
 
@@ -661,56 +762,7 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
-    // Method to parse and categorize POIs
-//    private void displayPOIs(String jsonResponse) {
-//        try {
-//            JSONObject jsonObject = new JSONObject(jsonResponse);
-//            JSONArray elements = jsonObject.getJSONArray("elements");
-//
-//            for (int i = 0; i < elements.length(); i++) {
-//                JSONObject element = elements.getJSONObject(i);
-//                double lat = element.getDouble("lat");
-//                double lon = element.getDouble("lon");
-//                String type = element.optJSONObject("tags").optString("amenity", "Unknown");
-//
-//                Marker marker = new Marker(mapView);
-//                marker.setPosition(new GeoPoint(lat, lon));
-//                marker.setTitle(type);
-//                marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-//
-//                switch (type) {
-//                    case "hospital":
-//                        hospitalMarkers.add(marker);
-//                        break;
-//                    case "bank":
-//                        bankMarkers.add(marker);
-//                        break;
-//                    case "school":
-//                        schoolMarkers.add(marker);
-//                        break;
-//                    case "police":
-//                        policeMarkers.add(marker);
-//                        break;
-//                    case "fuel":  // Gas Station
-//                        gasStationMarkers.add(marker);
-//                        break;
-//                    case "atm":
-//                        atmMarkers.add(marker);
-//                        break;
-//                    case "library":
-//                        libraryMarkers.add(marker);
-//                        break;
-//                    case "shopping_mall":
-//                    case "mall":
-//                        shoppingMallMarkers.add(marker);
-//                        break;
-//                }
-//            }
-//        } catch (Exception e) {
-//            Log.e(TAG, "Error parsing POIs", e);
-//        }
-//    }
-//
+
 
     // Method to calculate a route between two points
     private void calculateRoute(GeoPoint startPoint, GeoPoint endPoint) {
@@ -783,4 +835,12 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Error displaying route: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
+
+
+
+    // Fetch and show location name on touch
+
+
+
+
 }
