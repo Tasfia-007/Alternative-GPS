@@ -1,5 +1,6 @@
 [versions]
 agp = "8.7.0"
+opencsv = "5.6"
 osmdroid = "6.1.10"
 okhttp = "4.9.0"
 junit = "4.13.2"
@@ -28,6 +29,7 @@ appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "a
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+opencsv = { module = "com.opencsv:opencsv", version.ref = "opencsv" }
 osmdroid-android-v6112 = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroidAndroid" }
 play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
 osmdroid = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroid" }
