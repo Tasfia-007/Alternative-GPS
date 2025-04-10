@@ -1,197 +1,317 @@
 package com.example.myapplication;
 
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.GestureDetector;
-import android.view.MotionEvent;
+import android.view.View;
+import android.widget.Button;
+import android.widget.SearchView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
+import org.osmdroid.events.MapEventsReceiver;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.MapEventsOverlay;
 import org.osmdroid.views.overlay.Marker;
-import org.osmdroid.views.overlay.Polyline;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.List;
-
 public class ReportIssueActivity extends AppCompatActivity {
 
+
+
+
+
+
+    private static final String TAG = "ReportIssueActivity";
+    private static final String FILE_NAME = "route_data.csv";
+
     private MapView mapView;
-    private GeoPoint firstLocation = null;
-    private GeoPoint secondLocation = null;
-    private GestureDetector gestureDetector;
+    private SearchView searchView;
+    private GeoPoint startPoint = null;
+    private GeoPoint endPoint = null;
+    private Button btnSaveRoute, btnClearStart, btnClearEnd;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_routing);
+        setContentView(R.layout.activity_report_issue);
 
-        // Initialize MapView
-        mapView = findViewById(R.id.mapview);
+        // Initialize map
+
         Configuration.getInstance().setUserAgentValue(getApplicationContext().getPackageName());
+        mapView = findViewById(R.id.mapView);
+        searchView = findViewById(R.id.search_view);
         mapView.setTileSource(org.osmdroid.tileprovider.tilesource.TileSourceFactory.MAPNIK);
         mapView.setMultiTouchControls(true);
+
         IMapController mapController = mapView.getController();
-        mapController.setZoom(10.0);
-        mapController.setCenter(new GeoPoint(23.8103, 90.4125)); // Default to Dhaka
+        mapController.setZoom(15);
+        mapController.setCenter(new GeoPoint(23.8103, 90.4125)); // Default center Dhaka
 
-        // Initialize GestureDetector
-        gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
+        // Initialize buttons
+        btnSaveRoute = findViewById(R.id.btn_save_route);
+        btnClearStart = findViewById(R.id.btn_clear_start);
+        btnClearEnd = findViewById(R.id.btn_clear_end);
+
+        btnSaveRoute.setVisibility(View.GONE);
+        btnClearStart.setVisibility(View.GONE);
+        btnClearEnd.setVisibility(View.GONE);
+
+        btnSaveRoute.setOnClickListener(v -> saveRouteToCsv());
+        btnClearStart.setOnClickListener(v -> clearStartPoint());
+        btnClearEnd.setOnClickListener(v -> clearEndPoint());
+
+        // Setup Listeners
+        setupMapTouchListener();
+        setupSearchView();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    private void clearStartPoint() {
+        if (startPoint != null) {
+            startPoint = null;
+            btnClearStart.setVisibility(View.GONE);
+            mapView.getOverlays().clear();
+            setupMapTouchListener(); // Reset map listener
+            Toast.makeText(this, "Start Point Cleared", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "Start Point Cleared");
+        }
+    }
+
+    private void clearEndPoint() {
+        if (endPoint != null) {
+            endPoint = null;
+            btnClearEnd.setVisibility(View.GONE);
+            mapView.getOverlays().clear();
+            setupMapTouchListener(); // Reset map listener
+            Toast.makeText(this, "End Point Cleared", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "End Point Cleared");
+        }
+    }
+
+
+    private void setupSearchView() {
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
-            public boolean onSingleTapConfirmed(MotionEvent e) {
-                GeoPoint point = (GeoPoint) mapView.getProjection().fromPixels((int) e.getX(), (int) e.getY());
-
-                // Handle first location
-                if (firstLocation == null) {
-                    firstLocation = point;
-                    placeMarker(point, "First Location");
-                    Toast.makeText(ReportIssueActivity.this, "First location selected", Toast.LENGTH_SHORT).show();
-                }
-                // Handle second location
-                else if (secondLocation == null) {
-                    secondLocation = point;
-                    placeMarker(point, "Second Location");
-                    Toast.makeText(ReportIssueActivity.this, "Second location selected", Toast.LENGTH_SHORT).show();
-
-                    // Fetch nearest points on the road from OSRM
-                    fetchNearestCoordinatesAndRoute(firstLocation, secondLocation);
-                }
+            public boolean onQueryTextSubmit(String query) {
+                Log.d(TAG, "Search Query Submitted: " + query);
+                fetchCoordinates(query);
+                searchView.clearFocus();
                 return true;
+
+
+
+
+
+
+            }
+
+
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             }
         });
 
-        // Set onTouchListener to capture the touch events on the map
-        mapView.setOnTouchListener((v, event) -> gestureDetector.onTouchEvent(event));
+
+
     }
 
-    private void placeMarker(GeoPoint point, String title) {
-        Marker marker = new Marker(mapView);
-        marker.setPosition(point);
-        marker.setTitle(title);
-        mapView.getOverlays().add(marker);
-        mapView.invalidate(); // Refresh the map
-    }
+    private void fetchCoordinates(String query) {
+        // Nominatim API with Dhaka bounding box
+        String apiUrl = String.format(Locale.getDefault(),
+                "https://nominatim.openstreetmap.org/search?q=%s&format=json&addressdetails=1" +
+                        "&viewbox=90.2792,23.7104,90.5120,23.9135&bounded=1", query);
 
-    private void fetchNearestCoordinatesAndRoute(GeoPoint from, GeoPoint to) {
-        new Thread(() -> {
-            try {
-                // Fetch nearest point on the road for both locations using OSRM
-                GeoPoint nearestFrom = getNearestPointOnRoad(from);
-                GeoPoint nearestTo = getNearestPointOnRoad(to);
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder().url(apiUrl).build();
 
-                if (nearestFrom != null && nearestTo != null) {
-                    fetchRoute(nearestFrom, nearestTo); // Fetch route with snapped points
-                } else {
-                    runOnUiThread(() -> Toast.makeText(this, "Failed to fetch nearest points on road.", Toast.LENGTH_SHORT).show());
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                runOnUiThread(() -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-            }
-        }).start();
-    }
 
-    private GeoPoint getNearestPointOnRoad(GeoPoint point) {
-        try {
-            String osrmUrl = "http://router.project-osrm.org/nearest/v1/driving/" + point.getLongitude() + "," + point.getLatitude();
-            OkHttpClient client = new OkHttpClient();
-            Request request = new Request.Builder().url(osrmUrl).build();
-            Response response = client.newCall(request).execute();
 
-            if (response.isSuccessful() && response.body() != null) {
-                JSONObject jsonObject = new JSONObject(response.body().string());
-                JSONArray coordinates = jsonObject.getJSONArray("waypoints");
-
-                if (coordinates.length() > 0) {
-                    JSONArray coord = coordinates.getJSONArray(0);
-                    double lon = coord.getDouble(0);
-                    double lat = coord.getDouble(1);
-                    return new GeoPoint(lat, lon);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null; // Return null if no nearest point found
-    }
-
-    private void fetchRoute(GeoPoint fromPoint, GeoPoint toPoint) {
-        runOnUiThread(() -> mapView.getOverlays().clear());
-
-        // OSRM route API to get the path between two snapped points
-        String osrmUrl = "http://router.project-osrm.org/route/v1/driving/" +
-                fromPoint.getLongitude() + "," + fromPoint.getLatitude() + ";" +
-                toPoint.getLongitude() + "," + toPoint.getLatitude() +
-                "?overview=full&geometries=geojson";
 
         new Thread(() -> {
             try {
-                OkHttpClient client = new OkHttpClient();
-                Request request = new Request.Builder().url(osrmUrl).build();
+
+
                 Response response = client.newCall(request).execute();
 
                 if (response.isSuccessful() && response.body() != null) {
                     String jsonResponse = response.body().string();
-                    JSONObject jsonObject = new JSONObject(jsonResponse);
-                    JSONArray routes = jsonObject.getJSONArray("routes");
+                    Log.d(TAG, "Search API Response: " + jsonResponse);
+                    runOnUiThread(() -> parseCoordinates(jsonResponse));
 
-                    if (routes.length() > 0) {
-                        runOnUiThread(() -> displayRoute(jsonResponse));
-                    }
+
+
+
                 }
             } catch (Exception e) {
-                e.printStackTrace();
-                runOnUiThread(() -> Toast.makeText(this, "Error fetching route: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                Log.e(TAG, "Error fetching coordinates", e);
+
             }
         }).start();
     }
 
-    private void displayRoute(String jsonResponse) {
+    private void parseCoordinates(String jsonResponse) {
         try {
-            JSONObject jsonObject = new JSONObject(jsonResponse);
-            JSONArray routes = jsonObject.getJSONArray("routes");
+            JSONArray jsonArray = new JSONArray(jsonResponse);
+            if (jsonArray.length() > 0) {
+                JSONObject locationObject = jsonArray.getJSONObject(0);
+                double lat = locationObject.getDouble("lat");
+                double lon = locationObject.getDouble("lon");
 
-            if (routes.length() == 0) {
-                Toast.makeText(this, "No routes found.", Toast.LENGTH_SHORT).show();
-                return;
+                GeoPoint geoPoint = new GeoPoint(lat, lon);
+                mapView.getController().setCenter(geoPoint);
+
+                Marker marker = new Marker(mapView);
+                marker.setPosition(geoPoint);
+                marker.setTitle("Searched Location");
+                marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                mapView.getOverlays().add(marker);
+                mapView.invalidate();
+
+                Log.d(TAG, "Search Location Plotted: " + lat + ", " + lon);
+            } else {
+                Toast.makeText(this, "No results found", Toast.LENGTH_SHORT).show();
             }
-
-            JSONObject route = routes.getJSONObject(0);
-            JSONArray coordinates = route.getJSONObject("geometry").getJSONArray("coordinates");
-
-            List<GeoPoint> geoPoints = new ArrayList<>();
-            for (int i = 0; i < coordinates.length(); i++) {
-                JSONArray coord = coordinates.getJSONArray(i);
-                double lon = coord.getDouble(0);
-                double lat = coord.getDouble(1);
-                geoPoints.add(new GeoPoint(lat, lon));
-            }
-
-            // Create polyline with violet color for the selected route
-            Polyline polyline = new Polyline();
-            polyline.setPoints(geoPoints);
-            polyline.setColor(ContextCompat.getColor(this, R.color.violet_color));
-            polyline.setWidth(8.0f);
-
-            // Add polyline to the map
-            mapView.getOverlays().add(polyline);
-            mapView.invalidate(); // Refresh the map to show the route
-
         } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(this, "Error displaying route: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Log.e(TAG, "Error parsing coordinates", e);
         }
+    }
+
+    private void setupMapTouchListener() {
+        MapEventsOverlay mapEventsOverlay = new MapEventsOverlay(new MapEventsReceiver() {
+            @Override
+            public boolean singleTapConfirmedHelper(GeoPoint p) {
+                if (startPoint == null) {
+                    startPoint = p;
+                    addMarker(p, "Start Point");
+                    btnClearStart.setVisibility(View.VISIBLE);
+                    Log.d(TAG, "Start Point Selected: " + p.getLatitude() + ", " + p.getLongitude());
+                } else if (endPoint == null) {
+                    endPoint = p;
+                    addMarker(p, "End Point");
+                    btnSaveRoute.setVisibility(View.VISIBLE);
+                    btnClearEnd.setVisibility(View.VISIBLE);
+                    Log.d(TAG, "End Point Selected: " + p.getLatitude() + ", " + p.getLongitude());
+                }
+                return true;
+            }
+
+            @Override
+            public boolean longPressHelper(GeoPoint p) {
+                return false;
+            }
+        });
+
+        mapView.getOverlays().add(mapEventsOverlay);
+    }
+
+    private void addMarker(GeoPoint point, String title) {
+        Marker marker = new Marker(mapView);
+        marker.setPosition(point);
+        marker.setTitle(title);
+        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+        mapView.getOverlays().add(marker);
+        mapView.invalidate();
+    }
+
+    private void saveRouteToCsv() {
+        if (startPoint == null || endPoint == null) {
+            Toast.makeText(this, "Select Start and End points", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+
+
+        String roadName = getRoadName(startPoint);
+        File file = new File(getExternalFilesDir(null), FILE_NAME);
+        boolean isNewFile = !file.exists();
+
+
+
+        try (FileWriter writer = new FileWriter(file, true)) {
+            if (isNewFile) {
+                writer.append("Road Name,Start Latitude,Start Longitude,End Latitude,End Longitude\n");
+            }
+            String data = roadName + "," + startPoint.getLatitude() + "," + startPoint.getLongitude() + ","
+                    + endPoint.getLatitude() + "," + endPoint.getLongitude() + "\n";
+            writer.append(data);
+            writer.flush();
+
+            Log.d(TAG, "CSV Saved: " + data);
+            Toast.makeText(this, "Route saved!", Toast.LENGTH_SHORT).show();
+        } catch (IOException e) {
+            Log.e(TAG, "Error writing CSV", e);
+        }
+    }
+
+    private String getRoadName(GeoPoint geoPoint) {
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        try {
+            List<Address> addresses = geocoder.getFromLocation(geoPoint.getLatitude(), geoPoint.getLongitude(), 1);
+            if (addresses != null && !addresses.isEmpty()) {
+                return addresses.get(0).getThoroughfare();
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "Geocoder failed", e);
+        }
+        return "Unknown Road";
     }
 }
