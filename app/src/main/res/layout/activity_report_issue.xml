@@ -4,49 +4,44 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <!-- Search View to search a location -->
     <SearchView
         android:id="@+id/search_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:queryHint="Search location" />
 
+    <!-- Map View to display the map -->
     <org.osmdroid.views.MapView
         android:id="@+id/mapView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />
 
+    <!-- Container for buttons (Save, Clear) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="16dp">
 
+        <!-- Save Route Button -->
         <Button
             android:id="@+id/btn_save_route"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Save Route"
-            android:visibility="gone" />
+            android:visibility="gone" /> <!-- Initially hidden -->
 
+        <!-- Clear Points Button -->
         <Button
-            android:id="@+id/btn_clear_start"
+            android:id="@+id/btn_clear_points"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Clear Start"
-            android:visibility="gone"
-            android:layout_marginStart="8dp" />
-
-        <Button
-            android:id="@+id/btn_clear_end"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Clear End"
-            android:visibility="gone"
-            android:layout_marginStart="8dp" />
+            android:text="Clear Points"
+            android:visibility="gone" /> <!-- Initially hidden -->
 
     </LinearLayout>
 
