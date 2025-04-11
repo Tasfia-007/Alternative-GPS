@@ -2281,7 +2281,70 @@ public class ReportIssueActivity extends AppCompatActivity {
         // Setup Listeners
         setupMapTouchListener();
         setupSearchView();
+
+
+
+//        Configuration.getInstance().setUserAgentValue(getApplicationContext().getPackageName());
+//        mapView = findViewById(R.id.mapView);
+//        searchView = findViewById(R.id.search_view);
+//
+//        mapView.setTileSource(org.osmdroid.tileprovider.tilesource.TileSourceFactory.MAPNIK);
+//        mapView.setMultiTouchControls(true);
+
+//        IMapController mapController = mapView.getController();
+//        mapController.setZoom(15);
+//        mapController.setCenter(new org.osmdroid.util.GeoPoint(23.8103, 90.4125)); // Default center Dhaka
+
+//        setupSearchView();
+
     }
+    private void setupSearchView() {
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                Log.d(TAG, "Search Query Submitted: " + query);
+                fetchCoordinates(query);  // Fetch coordinates for the search query
+                searchView.clearFocus();  // Remove focus after submission
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false; // No action needed for text change
+            }
+        });
+    }
+
+
+    private void fetchCoordinates(String query) {
+        // Nominatim API URL with Dhaka bounding box
+        String apiUrl = String.format(Locale.getDefault(),
+                "https://nominatim.openstreetmap.org/search?q=%s&format=json&addressdetails=1" +
+                        "&viewbox=90.2792,23.7104,90.5120,23.9135&bounded=1", query);
+
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder().url(apiUrl).build();
+
+        new Thread(() -> {
+            try {
+                Response response = client.newCall(request).execute();
+                if (response.isSuccessful() && response.body() != null) {
+                    String jsonResponse = response.body().string();
+                    Log.d(TAG, "Search API Response: " + jsonResponse);
+                    runOnUiThread(() -> parseCoordinates(jsonResponse)); // Parse and update UI on the main thread
+                } else {
+                    String errorMsg = "Request failed. Code: " + response.code();
+                    Log.e(TAG, errorMsg);
+                    runOnUiThread(() -> Toast.makeText(this, "Failed to fetch location: " + errorMsg, Toast.LENGTH_LONG).show());
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error fetching coordinates", e);
+                runOnUiThread(() -> Toast.makeText(this, "Error fetching location: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        }).start();
+    }
+
+
 
     // This will clear the last selected point
     private void clearLastSelectedPoint() {
@@ -2311,72 +2374,57 @@ public class ReportIssueActivity extends AppCompatActivity {
         Toast.makeText(this, "No Points to Clear", Toast.LENGTH_SHORT).show();
     }
 
-    private void setupSearchView() {
-        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-                Log.d(TAG, "Search Query Submitted: " + query);
-                fetchCoordinates(query);
-                searchView.clearFocus();
-                return true;
-            }
 
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                return false;
-            }
-        });
-    }
 
-    private void fetchCoordinates(String query) {
-        // Nominatim API with Dhaka bounding box
-        String apiUrl = String.format(Locale.getDefault(),
-                "https://nominatim.openstreetmap.org/search?q=%s&format=json&addressdetails=1" +
-                        "&viewbox=90.2792,23.7104,90.5120,23.9135&bounded=1", query);
+//    private void fetchCoordinates(String query) {
+//        // Nominatim API with Dhaka bounding box
+//        String apiUrl = String.format(Locale.getDefault(),
+//                "https://nominatim.openstreetmap.org/search?q=%s&format=json&addressdetails=1" +
+//                        "&viewbox=90.2792,23.7104,90.5120,23.9135&bounded=1", query);
+//
+//        OkHttpClient client = new OkHttpClient();
+//        Request request = new Request.Builder().url(apiUrl).build();
+//
+//        new Thread(() -> {
+//            try {
+//                Response response = client.newCall(request).execute();
+//                if (response.isSuccessful() && response.body() != null) {
+//                    String jsonResponse = response.body().string();
+//                    Log.d(TAG, "Search API Response: " + jsonResponse);
+//                    runOnUiThread(() -> parseCoordinates(jsonResponse));
+//                }
+//            } catch (Exception e) {
+//                Log.e(TAG, "Error fetching coordinates", e);
+//            }
+//        }).start();
+//    }
 
-        OkHttpClient client = new OkHttpClient();
-        Request request = new Request.Builder().url(apiUrl).build();
-
-        new Thread(() -> {
-            try {
-                Response response = client.newCall(request).execute();
-                if (response.isSuccessful() && response.body() != null) {
-                    String jsonResponse = response.body().string();
-                    Log.d(TAG, "Search API Response: " + jsonResponse);
-                    runOnUiThread(() -> parseCoordinates(jsonResponse));
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Error fetching coordinates", e);
-            }
-        }).start();
-    }
-
-    private void parseCoordinates(String jsonResponse) {
-        try {
-            JSONArray jsonArray = new JSONArray(jsonResponse);
-            if (jsonArray.length() > 0) {
-                JSONObject locationObject = jsonArray.getJSONObject(0);
-                double lat = locationObject.getDouble("lat");
-                double lon = locationObject.getDouble("lon");
-
-                GeoPoint geoPoint = new GeoPoint(lat, lon);
-                mapView.getController().setCenter(geoPoint);
-
-                Marker marker = new Marker(mapView);
-                marker.setPosition(geoPoint);
-                marker.setTitle("Searched Location");
-                marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-                mapView.getOverlays().add(marker);
-                mapView.invalidate();
-
-                Log.d(TAG, "Search Location Plotted: " + lat + ", " + lon);
-            } else {
-                Toast.makeText(this, "No results found", Toast.LENGTH_SHORT).show();
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error parsing coordinates", e);
-        }
-    }
+//    private void parseCoordinates(String jsonResponse) {
+//        try {
+//            JSONArray jsonArray = new JSONArray(jsonResponse);
+//            if (jsonArray.length() > 0) {
+//                JSONObject locationObject = jsonArray.getJSONObject(0);
+//                double lat = locationObject.getDouble("lat");
+//                double lon = locationObject.getDouble("lon");
+//
+//                GeoPoint geoPoint = new GeoPoint(lat, lon);
+//                mapView.getController().setCenter(geoPoint);
+//
+//                Marker marker = new Marker(mapView);
+//                marker.setPosition(geoPoint);
+//                marker.setTitle("Searched Location");
+//                marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+//                mapView.getOverlays().add(marker);
+//                mapView.invalidate();
+//
+//                Log.d(TAG, "Search Location Plotted: " + lat + ", " + lon);
+//            } else {
+//                Toast.makeText(this, "No results found", Toast.LENGTH_SHORT).show();
+//            }
+//        } catch (Exception e) {
+//            Log.e(TAG, "Error parsing coordinates", e);
+//        }
+//    }
 
     private void setupMapTouchListener() {
         MapEventsOverlay mapEventsOverlay = new MapEventsOverlay(new MapEventsReceiver() {
@@ -2514,6 +2562,22 @@ public class ReportIssueActivity extends AppCompatActivity {
         }
     }
 
+//    private void setupSearchView() {
+//        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+//            @Override
+//            public boolean onQueryTextSubmit(String query) {
+//                Log.d(TAG, "Search Query Submitted: " + query);
+//                fetchCoordinates(query); // Fetch the coordinates for the location
+//                searchView.clearFocus(); // Remove focus from the search view after submitting the query
+//                return true;
+//            }
+//
+//            @Override
+//            public boolean onQueryTextChange(String newText) {
+//                return false; // No action needed while typing
+//            }
+//        });
+//    }
 
 
     private String getRoadName(GeoPoint geoPoint) {
@@ -2528,6 +2592,28 @@ public class ReportIssueActivity extends AppCompatActivity {
         }
         return "Unknown Road";
     }
+//    private void fetchCoordinates(String query) {
+//        // Nominatim API with Dhaka bounding box
+//        String apiUrl = String.format(Locale.getDefault(),
+//                "https://nominatim.openstreetmap.org/search?q=%s&format=json&addressdetails=1" +
+//                        "&viewbox=90.2792,23.7104,90.5120,23.9135&bounded=1", query);
+//
+//        OkHttpClient client = new OkHttpClient();
+//        Request request = new Request.Builder().url(apiUrl).build();
+//
+//        new Thread(() -> {
+//            try {
+//                Response response = client.newCall(request).execute();
+//                if (response.isSuccessful() && response.body() != null) {
+//                    String jsonResponse = response.body().string();
+//                    Log.d(TAG, "Search API Response: " + jsonResponse);
+//                    runOnUiThread(() -> parseCoordinates(jsonResponse)); // Process the coordinates on the main thread
+//                }
+//            } catch (Exception e) {
+//                Log.e(TAG, "Error fetching coordinates", e);
+//            }
+//        }).start();
+//    }
 
 
 //    private void clearPoints() {
@@ -2548,6 +2634,31 @@ public class ReportIssueActivity extends AppCompatActivity {
 //        Toast.makeText(this, "Points Cleared", Toast.LENGTH_SHORT).show();
 //        Log.d(TAG, "All Points Cleared");
 //    }
+private void parseCoordinates(String jsonResponse) {
+    try {
+        JSONArray jsonArray = new JSONArray(jsonResponse);
+        if (jsonArray.length() > 0) {
+            JSONObject locationObject = jsonArray.getJSONObject(0);
+            double lat = locationObject.getDouble("lat");
+            double lon = locationObject.getDouble("lon");
 
+            org.osmdroid.util.GeoPoint geoPoint = new org.osmdroid.util.GeoPoint(lat, lon);
+            mapView.getController().setCenter(geoPoint);
+
+            Marker marker = new Marker(mapView);
+            marker.setPosition(geoPoint);
+            marker.setTitle("Searched Location");
+            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+            mapView.getOverlays().add(marker);
+            mapView.invalidate(); // Refresh the map
+
+            Log.d(TAG, "Search Location Plotted: " + lat + ", " + lon);
+        } else {
+            Toast.makeText(this, "No results found", Toast.LENGTH_SHORT).show();
+        }
+    } catch (Exception e) {
+        Log.e(TAG, "Error parsing coordinates", e);
+    }
+}
 
 }
