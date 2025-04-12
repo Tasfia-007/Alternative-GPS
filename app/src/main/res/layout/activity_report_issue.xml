@@ -1,86 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <!-- MapView for displaying the map -->
-    <org.osmdroid.views.MapView
-        android:id="@+id/mapview"
+    <!-- Search View to search a location -->
+    <SearchView
+        android:id="@+id/search_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
-
-    <!-- Route Info Container -->
-    <LinearLayout
-        android:id="@+id/route_info_container"
-        android:orientation="vertical"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@android:color/white"
-        android:visibility="gone"
-        android:padding="16dp"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true">
+        android:queryHint="Search location" />
 
-        <!-- Time for Best Route -->
-        <TextView
-            android:id="@+id/best_route_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Best route time: "
-            android:textSize="16sp"
-            android:textColor="@android:color/black"/>
+    <!-- Map View to display the map -->
+    <org.osmdroid.views.MapView
+        android:id="@+id/mapView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
-        <!-- Alternative Routes Info -->
-        <TextView
-            android:id="@+id/alternative_routes"
-            android:layout_width="wrap_content"
+    <!-- Container for buttons (Save, Clear) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp">
+
+        <!-- Save Route Button -->
+        <Button
+            android:id="@+id/btn_save_route"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Alternative routes: "
-            android:textSize="16sp"
-            android:textColor="@android:color/black"/>
+            android:layout_weight="1"
+            android:text="Save Route"
+            android:visibility="gone" /> <!-- Initially hidden -->
+
+        <!-- Clear Points Button -->
+        <Button
+            android:id="@+id/btn_clear_points"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Clear Points"
+            android:visibility="gone" /> <!-- Initially hidden -->
+
     </LinearLayout>
 
-    <!-- Start Point input section -->
-    <EditText
-        android:id="@+id/from_location"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Enter Start Location"
-        android:padding="8dp"
-        android:layout_alignParentTop="true"
-        android:layout_marginTop="16dp"
-        android:layout_centerHorizontal="true" />
-
-    <!-- End Point input section -->
-    <EditText
-        android:id="@+id/to_location"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Enter End Location"
-        android:padding="8dp"
-        android:layout_below="@id/from_location"
-        android:layout_marginTop="8dp"
-        android:layout_centerHorizontal="true" />
-
-    <!-- Button to Get Route -->
-    <Button
-        android:id="@+id/get_route_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Get Route"
-        android:layout_below="@id/to_location"
-        android:layout_marginTop="16dp"
-        android:layout_centerHorizontal="true" />
-
-    <!-- Spinner for selecting travel mode -->
-    <Spinner
-        android:id="@+id/travel_mode_spinner"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/get_route_button"
-        android:layout_marginTop="16dp"
-        android:layout_centerHorizontal="true" />
-</RelativeLayout>
+</LinearLayout>
