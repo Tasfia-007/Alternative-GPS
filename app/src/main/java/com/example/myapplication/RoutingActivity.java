@@ -311,7 +311,12 @@
 
 package com.example.myapplication;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.VectorDrawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -323,6 +328,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
@@ -410,10 +416,61 @@ public class RoutingActivity extends AppCompatActivity {
                 return;
             }
 
-            // Pass selectedMode to fetchCoordinatesAndDisplayRoute()
-            Log.d(TAG, "Fetching route from: " + from + " to: " + to);
-            fetchCoordinatesAndDisplayRoute(from, to, selectedMode[0]);
+            // Check if "from" and "to" are in lat,lon format (e.g., "23.8103,90.4125")
+            boolean isFromCoordinates = from.matches("-?\\d+\\.\\d+,-?\\d+\\.\\d+");
+            boolean isToCoordinates = to.matches("-?\\d+\\.\\d+,-?\\d+\\.\\d+");
+
+            if (isFromCoordinates && isToCoordinates) {
+                try {
+                    // Parse "from" coordinates
+                    String[] fromLatLon = from.split(",");
+                    double fromLat = Double.parseDouble(fromLatLon[0].trim());
+                    double fromLon = Double.parseDouble(fromLatLon[1].trim());
+                    GeoPoint fromPoint = new GeoPoint(fromLat, fromLon);
+
+                    // Parse "to" coordinates
+                    String[] toLatLon = to.split(",");
+                    double toLat = Double.parseDouble(toLatLon[0].trim());
+                    double toLon = Double.parseDouble(toLatLon[1].trim());
+                    GeoPoint toPoint = new GeoPoint(toLat, toLon);
+
+                    Log.d(TAG, "Coordinates parsed: From - " + fromPoint + ", To - " + toPoint);
+                    fetchRoute(fromPoint, toPoint, selectedMode[0]); // Directly fetch the route
+                } catch (Exception e) {
+                    Log.e(TAG, "Error parsing coordinates", e);
+                    Toast.makeText(this, "Invalid coordinates format", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                // If not coordinates, use the existing geocoding method
+                Log.d(TAG, "Fetching route from: " + from + " to: " + to);
+                fetchCoordinatesAndDisplayRoute(from, to, selectedMode[0]);
+            }
         });
+    }
+
+    private Drawable resizeDrawable(int drawableId, int width, int height) {
+        Drawable drawable = ContextCompat.getDrawable(this, drawableId);
+        if (drawable == null) return null;
+
+        // If the drawable is already a BitmapDrawable, resize it
+        if (drawable instanceof BitmapDrawable) {
+            Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
+            Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false);
+            return new BitmapDrawable(getResources(), resizedBitmap);
+        }
+        // If it's a VectorDrawable, convert it to a Bitmap and resize
+        else if (drawable instanceof VectorDrawable) {
+            return getBitmapFromVector(drawable, width, height);
+        }
+        return drawable; // Return original if not handled
+    }
+
+    private Drawable getBitmapFromVector(Drawable vectorDrawable, int width, int height) {
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        vectorDrawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        vectorDrawable.draw(canvas);
+        return new BitmapDrawable(getResources(), bitmap);
     }
 
     private void fetchCoordinatesAndDisplayRoute(String from, String to, String mode) {
