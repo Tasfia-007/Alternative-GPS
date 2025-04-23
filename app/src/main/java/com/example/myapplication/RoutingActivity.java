@@ -344,6 +344,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -434,11 +435,11 @@ public class RoutingActivity extends AppCompatActivity {
                     double toLon = Double.parseDouble(toLatLon[1].trim());
                     GeoPoint toPoint = new GeoPoint(toLat, toLon);
 
-                    Log.d(TAG, "Coordinates parsed: From - " + fromPoint + ", To - " + toPoint);
+                    Log.d(TAG, "Parsed coordinates: From - " + fromPoint + ", To - " + toPoint);
                     fetchRoute(fromPoint, toPoint, selectedMode[0]); // Directly fetch the route
-                } catch (Exception e) {
-                    Log.e(TAG, "Error parsing coordinates", e);
-                    Toast.makeText(this, "Invalid coordinates format", Toast.LENGTH_SHORT).show();
+                } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+                    Log.e(TAG, "Error parsing coordinates: " + e.getMessage());
+                    Toast.makeText(this, "Invalid coordinates format. Use: lat,lon (e.g., 23.8103,90.4125)", Toast.LENGTH_SHORT).show();
                 }
             } else {
                 // If not coordinates, use the existing geocoding method
@@ -525,93 +526,146 @@ public class RoutingActivity extends AppCompatActivity {
     }
 
     private void fetchRoute(GeoPoint fromPoint, GeoPoint toPoint, String mode) {
-        // Clear previous route polyline and markers, but keep polygons
-        mapView.getOverlays().clear();
-        mapView.invalidate();  // Ensure the map is refreshed before displaying new route
-        Log.d(TAG, "Clearing previous overlays on map before new route.");
+        // Map travel modes to GraphHopper's vehicle types
+        String vehicle;
+        switch (mode.toLowerCase()) {
+            case "driving":
+                vehicle = "car";
+                break;
+            case "walking":
+                vehicle = "foot";
+                break;
+            case "cycling":
+                vehicle = "bike";
+                break;
+            default:
+                vehicle = "car"; // Default to car
+        }
 
-        // Create the base URL for fetching the route without obstacles
-        String osrmUrl = "http://router.project-osrm.org/route/v1/" + mode + "/" +
-                fromPoint.getLongitude() + "," + fromPoint.getLatitude() + ";" +
-                toPoint.getLongitude() + "," + toPoint.getLatitude() +
-                "?overview=full&geometries=geojson&alternatives=true&steps=true"; // Add 'steps=true' to get detailed route information
+        // GraphHopper API key
+        String graphHopperApiKey = "d20cbf9f-8c4d-4f87-94b9-09203bcba7cb"; // Replace with your API key
+
+        // Base GraphHopper URL for a single route (no waypoints initially)
+        String graphHopperUrl = "https://graphhopper.com/api/1/route?" +
+                "point=" + fromPoint.getLatitude() + "," + fromPoint.getLongitude() +
+                "&point=" + toPoint.getLatitude() + "," + toPoint.getLongitude() +
+                "&vehicle=" + vehicle +
+                "&algorithm=alternative_route" +
+                "&max_paths=5" +
+                "&alternative_route.max_weight_factor=2.0" +
+                "&alternative_route.max_share_factor=0.4" +
+                "&locale=en" +
+                "&instructions=true" +
+                "&calc_points=true" +
+                "&points_encoded=true" +
+                "&key=" + graphHopperApiKey;
+
+        Log.d(TAG, "GraphHopper URL: " + graphHopperUrl);
 
         // Perform the network request to fetch the route
         new Thread(() -> {
             try {
-                OkHttpClient client = new OkHttpClient();
-                Request request = new Request.Builder().url(osrmUrl).build();
+                OkHttpClient client = new OkHttpClient.Builder()
+                        .connectTimeout(45, TimeUnit.SECONDS)
+                        .readTimeout(45, TimeUnit.SECONDS)
+                        .writeTimeout(45, TimeUnit.SECONDS)
+                        .build();
+
+                Request request = new Request.Builder()
+                        .url(graphHopperUrl)
+                        .build();
+
+                Log.d(TAG, "Sending GraphHopper route request...");
+                long startTime = System.currentTimeMillis();
                 Response response = client.newCall(request).execute();
+                long endTime = System.currentTimeMillis();
+                Log.d(TAG, "GraphHopper route request completed in " + (endTime - startTime) + "ms");
 
                 if (response.isSuccessful() && response.body() != null) {
                     String jsonResponse = response.body().string();
-                    JSONObject jsonObject = new JSONObject(jsonResponse);
-                    JSONArray routes = jsonObject.getJSONArray("routes");
+                    Log.d(TAG, "GraphHopper route response: " + jsonResponse);
 
-                    if (routes.length() > 0) {
-                        runOnUiThread(() -> displayRoute(jsonResponse, fromPoint, toPoint));  // Ensure route is displayed on the UI thread
-                        Log.d(TAG, "Route successfully fetched and displayed.");
+                    JSONObject jsonObject = new JSONObject(jsonResponse);
+                    JSONArray paths = jsonObject.getJSONArray("paths");
+
+                    if (paths.length() > 0) {
+                        List<String> routeResponses = new ArrayList<>();
+                        routeResponses.add(jsonResponse);
+                        runOnUiThread(() -> displayRoute(routeResponses, fromPoint, toPoint));
+                        Log.d(TAG, "Routes successfully fetched. Total routes: " + paths.length());
                     } else {
-                        Log.d(TAG, "No routes available.");
+                        runOnUiThread(() -> Toast.makeText(this, "No routes found.", Toast.LENGTH_SHORT).show());
+                        Log.e(TAG, "No paths found in GraphHopper response.");
                     }
                 } else {
-                    Log.e(TAG, "Failed to fetch route.");
+                    String errorBody = response.body() != null ? response.body().string() : "No response body";
+                    Log.e(TAG, "Failed to fetch route: HTTP " + response.code() + " - " + response.message() + " - " + errorBody);
+                    runOnUiThread(() -> Toast.makeText(this, "Failed to fetch route: " + response.message(), Toast.LENGTH_SHORT).show());
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                runOnUiThread(() -> Toast.makeText(this, "Error fetching route: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                Log.e(TAG, "Error fetching route: " + e.getMessage());
+                runOnUiThread(() -> Toast.makeText(this, "Error fetching route: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+            } finally {
+                // Ensure polygons are re-added even if route fetching fails
+                runOnUiThread(() -> {
+                    for (Polygon polygon : savedPolygons) {
+                        mapView.getOverlays().add(polygon);
+                    }
+                    mapView.invalidate();
+                });
             }
         }).start();
     }
 
-
-    private void displayRoute(String jsonResponse, GeoPoint fromPoint, GeoPoint toPoint) {
+    private void displayRoute(List<String> routeResponses, GeoPoint fromPoint, GeoPoint toPoint) {
         try {
-            JSONObject jsonObject = new JSONObject(jsonResponse);
-            JSONArray routes = jsonObject.getJSONArray("routes");
-
-            // If no routes are found, show a toast
-            if (routes.length() == 0) {
-                Toast.makeText(this, "No routes found.", Toast.LENGTH_SHORT).show();
-                Log.d(TAG, "No routes found.");
-                return;
+            // Clear previous routes but keep polygons
+            mapView.getOverlays().clear();
+            for (Polygon polygon : savedPolygons) {
+                mapView.getOverlays().add(polygon);
             }
 
-            // Define the colors with transparency for up to 5 routes
+            // Define colors for routes
             int[] colors = new int[]{
-                    Color.argb(150, 255, 0, 0), // Transparent Red
-                    Color.argb(150, 0, 255, 0), // Transparent Green
-                    Color.argb(150, 0, 0, 255), // Transparent Blue
+                    Color.argb(150, 255, 0, 0),   // Transparent Red
+                    Color.argb(150, 0, 255, 0),   // Transparent Green
+                    Color.argb(150, 0, 0, 255),   // Transparent Blue
                     Color.argb(150, 255, 255, 0), // Transparent Yellow
-                    Color.argb(150, 0, 0, 0)  // Transparent Black
+                    Color.argb(150, 255, 0, 255)  // Transparent Magenta
             };
 
-            int routesToDisplay = Math.min(routes.length(), 5); // Display up to 5 routes
+            int routesDisplayed = 0;
 
-            // Loop through each route and display it
-            for (int i = 0; i < routesToDisplay; i++) {
-                JSONObject route = routes.getJSONObject(i);
-                JSONArray coordinates = route.getJSONObject("geometry").getJSONArray("coordinates");
+            // Process each route response
+            for (String jsonResponse : routeResponses) {
+                JSONObject jsonObject = new JSONObject(jsonResponse);
+                JSONArray paths = jsonObject.getJSONArray("paths");
 
-                List<GeoPoint> geoPoints = new ArrayList<>();
-                for (int j = 0; j < coordinates.length(); j++) {
-                    JSONArray coord = coordinates.getJSONArray(j);
-                    double lon = coord.getDouble(0);
-                    double lat = coord.getDouble(1);
-                    geoPoints.add(new GeoPoint(lat, lon));
+                for (int i = 0; i < paths.length() && routesDisplayed < 5; i++) {
+                    JSONObject path = paths.getJSONObject(i);
+                    String encodedPolyline = path.getString("points");
+
+                    // Decode the polyline
+                    List<GeoPoint> geoPoints = decodePolyline(encodedPolyline);
+
+                    // Create and add the polyline
+                    Polyline polyline = new Polyline();
+                    polyline.setPoints(geoPoints);
+                    polyline.setColor(colors[routesDisplayed % colors.length]);
+                    polyline.setWidth(8.0f);
+                    mapView.getOverlays().add(polyline);
+
+                    // Log route details
+                    double distance = path.getDouble("distance") / 1000; // Convert to km
+                    double duration = path.getDouble("time") / 1000 / 60; // Convert to minutes
+                    Log.d(TAG, "Route " + (routesDisplayed + 1) + ": Distance = " + distance + " km, Duration = " + duration + " mins");
+
+                    routesDisplayed++;
                 }
-
-                // Create the route polyline with a specific color
-                Polyline polyline = new Polyline();
-                polyline.setPoints(geoPoints);
-                polyline.setColor(colors[i]);  // Use different colors for each route
-                polyline.setWidth(8.0f);
-
-                // Add the polyline to the map overlays
-                mapView.getOverlays().add(polyline);
             }
 
-            // Add markers for start and end points
+            // Add start and end markers
             Marker startMarker = new Marker(mapView);
             startMarker.setPosition(fromPoint);
             startMarker.setTitle("Start: " + fromLocation.getText().toString());
@@ -624,27 +678,50 @@ public class RoutingActivity extends AppCompatActivity {
             endMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
             mapView.getOverlays().add(endMarker);
 
-            // Re-add the polygons to the map after the routes are displayed
-            for (Polygon polygon : savedPolygons) {
-                mapView.getOverlays().add(polygon);
-            }
-
-            // Refresh the map to show the updated routes and markers
+            // Refresh the map
             mapView.invalidate();
-            Log.d(TAG, "Routes and markers displayed on the map.");
+            Log.d(TAG, "Displayed " + routesDisplayed + " routes.");
 
-            // Toast message to show the number of routes displayed
-            if (routesToDisplay < 5) {
-                Toast.makeText(this, routesToDisplay + " routes are shown.", Toast.LENGTH_SHORT).show();
-            }
+            Toast.makeText(this, routesDisplayed + " routes displayed.", Toast.LENGTH_SHORT).show();
 
         } catch (Exception e) {
             e.printStackTrace();
-            Toast.makeText(this, "Error displaying routes: " + e.getMessage(), Toast.LENGTH_LONG).show();
             Log.e(TAG, "Error displaying routes: " + e.getMessage());
+            Toast.makeText(this, "Error displaying routes: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
+    // Method to decode GraphHopper's encoded polyline
+    private List<GeoPoint> decodePolyline(String encoded) {
+        List<GeoPoint> poly = new ArrayList<>();
+        int index = 0, len = encoded.length();
+        int lat = 0, lng = 0;
+
+        while (index < len) {
+            int b, shift = 0, result = 0;
+            do {
+                b = encoded.charAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            lat += dlat;
+
+            shift = 0;
+            result = 0;
+            do {
+                b = encoded.charAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            lng += dlng;
+
+            GeoPoint p = new GeoPoint((double) lat / 1E5, (double) lng / 1E5);
+            poly.add(p);
+        }
+        return poly;
+    }
 
     // Load saved polygons from CSV in assets folder
     private void loadPolygonsFromAssets() {
