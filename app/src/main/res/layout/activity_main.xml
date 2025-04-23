@@ -39,9 +39,10 @@
             android:layout_above="@id/bottom_panel"
             android:layout_alignParentEnd="true"
             android:layout_margin="16dp"
+            android:background="@android:color/transparent"
             android:elevation="4dp"
             android:padding="12dp"
-            android:src="@drawable/ic_direction" />
+            android:src="@drawable/ic_direction_sign" />
 
         <!-- Top Bar -->
         <LinearLayout
