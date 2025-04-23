@@ -64,6 +64,14 @@
                     android:src="@drawable/menubar"
                     android:contentDescription="@string/menu_icon"
                     android:padding="5dp" />
+                <ImageButton
+                    android:id="@+id/voice_search_button"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_mic"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Voice Search"
+                    android:padding="8dp" />
 
                 <SearchView
                     android:id="@+id/search_view"

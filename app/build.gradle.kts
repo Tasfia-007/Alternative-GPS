@@ -56,6 +56,9 @@ dependencies {
 
     implementation(libs.glide)
     implementation(libs.opencsv)
+    implementation(libs.osmdroid.android.v6111)
+    implementation(libs.osmdroid.android.v6112)
+    implementation(libs.okhttp.v493)
 
 
 
