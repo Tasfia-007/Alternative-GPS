@@ -18,6 +18,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
+import android.speech.RecognizerIntent;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -75,6 +76,8 @@ public class MainActivity extends AppCompatActivity {
     private MapView mapView;
     private MyLocationNewOverlay locationOverlay;
     private SearchView searchView;
+    private static final int SPEECH_REQUEST_CODE = 100;
+    private static final int AUDIO_PERMISSION_REQUEST = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,6 +96,12 @@ public class MainActivity extends AppCompatActivity {
         directionButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, RoutingActivity.class);
             startActivity(intent);
+        });
+        ImageButton voiceSearchButton = findViewById(R.id.voice_search_button);
+        voiceSearchButton.setOnClickListener(v -> {
+            if (checkAndRequestAudioPermissions()) {
+                startVoiceSearch();
+            }
         });
 //        EditText searchPlate = searchView.findViewById(androidx.appcompat.R.id.search_src_text);
 //        searchPlate.setHintTextColor(ContextCompat.getColor(this, android.R.color.darker_gray));
@@ -259,6 +268,16 @@ public class MainActivity extends AppCompatActivity {
 //        mapView.getOverlays().add(mapEventsOverlay);
 //    }
 
+
+    private boolean checkAndRequestAudioPermissions() {
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.RECORD_AUDIO}, AUDIO_PERMISSION_REQUEST);
+            return false;
+        }
+        return true;
+    }
+
     private void displayLocationInfo(GeoPoint geoPoint) {
         // Reverse geocode to get location name
         String locationName = getLocationName(geoPoint);
@@ -390,6 +409,17 @@ public class MainActivity extends AppCompatActivity {
         // Optionally, navigate to login screen or refresh activity
         recreate(); // Refresh the activity to update the menu
     }
+    private void startVoiceSearch() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak your destination...");
+        try {
+            startActivityForResult(intent, SPEECH_REQUEST_CODE);
+        } catch (Exception e) {
+            Toast.makeText(this, "Speech recognition not supported", Toast.LENGTH_SHORT).show();
+        }
+    }
 
 
 
@@ -425,6 +455,18 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == SPEECH_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
+            ArrayList<String> results = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+            if (results != null && !results.isEmpty()) {
+                String spokenText = results.get(0);
+                searchView.setQuery(spokenText, true); // Trigger search with spoken text
+            }
+        }
+    }
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
