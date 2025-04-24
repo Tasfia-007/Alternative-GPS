@@ -35,6 +35,7 @@
             android:padding="5dp"
             android:gravity="center"/>
     </LinearLayout>
+
     <View
         android:layout_width="380dp"
         android:layout_height="2dp"
@@ -43,7 +44,7 @@
         android:layout_marginTop="10dp"
         android:layout_marginBottom="10dp"/>
 
-    <!-- Current Weather Section (Divided into Two Parts) -->
+    <!-- Current Weather Section -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -53,7 +54,7 @@
         android:gravity="center"
         android:layout_marginBottom="12dp">
 
-        <!-- Left Side: Temperature & Condition -->
+        <!-- Left Side: Temperature, Condition, FeelsLike -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -79,9 +80,19 @@
                 android:textSize="16sp"
                 android:padding="5dp"
                 android:gravity="center"/>
+
+            <TextView
+                android:id="@+id/feelslike_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Feels Like: Loading..."
+                android:textSize="16sp"
+                android:padding="5dp"
+                android:gravity="center"/>
+
         </LinearLayout>
 
-        <!-- Separator Line (Shorter than full width) -->
+        <!-- Separator Line -->
         <View
             android:layout_width="2dp"
             android:layout_height="60dp"
@@ -91,7 +102,7 @@
             android:layout_marginLeft="8dp"
             android:layout_marginRight="8dp"/>
 
-        <!-- Right Side: Wind, Humidity, Precipitation -->
+        <!-- Right Side: Wind, Humidity, Precipitation, TempMax, TempMin -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -125,8 +136,28 @@
                 android:textSize="16sp"
                 android:padding="5dp"
                 android:gravity="center"/>
+
+            <TextView
+                android:id="@+id/tempmax_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Max Temp: Loading..."
+                android:textSize="16sp"
+                android:padding="5dp"
+                android:gravity="center"/>
+
+            <TextView
+                android:id="@+id/tempmin_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Min Temp: Loading..."
+                android:textSize="16sp"
+                android:padding="5dp"
+                android:gravity="center"/>
+
         </LinearLayout>
     </LinearLayout>
+
     <View
         android:layout_width="200dp"
         android:layout_height="2dp"
@@ -134,7 +165,8 @@
         android:layout_gravity="center"
         android:layout_marginTop="10dp"
         android:layout_marginBottom="10dp"/>
-    <!-- Horizontal Scroll for Hourly Forecast -->
+
+    <!-- Hourly Weather Section -->
     <TextView
         android:id="@+id/full_hourly_weather_headline"
         android:layout_width="match_parent"
@@ -162,7 +194,6 @@
 
     </HorizontalScrollView>
 
-    <!-- Separator Line (Shorter than full width) Before 3rd Box -->
     <View
         android:layout_width="200dp"
         android:layout_height="2dp"
@@ -171,7 +202,7 @@
         android:layout_marginTop="10dp"
         android:layout_marginBottom="10dp"/>
 
-    <!-- Headline for Upcoming Forecast -->
+    <!-- Upcoming Forecast -->
     <TextView
         android:id="@+id/upcoming_forecast_headline"
         android:layout_width="match_parent"
@@ -183,7 +214,6 @@
         android:background="@drawable/rounded_bg1"
         android:layout_marginBottom="5dp"/>
 
-    <!-- Horizontal Scroll for Upcoming Days Forecast -->
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -206,7 +236,15 @@
         android:layout_marginTop="10dp"
         android:background="@color/black">
 
-
+        <!-- TextView for displaying logs -->
+        <TextView
+            android:id="@+id/logView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Log: Loading..."
+            android:textColor="@android:color/white"
+            android:padding="10dp"
+            android:scrollbars="vertical"/>
     </ScrollView>
 
 </LinearLayout>
