@@ -3,160 +3,174 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp"
-        android:gravity="center_horizontal">
+        android:layout_height="match_parent">
 
-        <!-- Profile Picture -->
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/profile_picture_edit"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:layout_marginTop="40dp"
-            android:layout_marginBottom="10dp"
+        <!-- Background Image -->
+        <ImageView
+            android:id="@+id/bg_profile_map"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/images1"
             android:scaleType="centerCrop"
-            android:src="@drawable/baseline_account_circle_24"
-            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MaterialComponents.Circular" />
+            android:alpha="0.7" />
 
-        <!-- Edit Profile Picture Text -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Edit Profile Picture"
-            android:textSize="14sp"
-            android:textColor="#6200EE"
-            android:layout_marginBottom="20dp" />
-
-        <!-- Username (Uneditable) -->
-        <TextView
+        <!-- Content Layout -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Username"
-            android:textSize="14sp"
-            android:textColor="#808080"
-            android:layout_marginBottom="4dp" />
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:gravity="center_horizontal"
+            android:layout_alignParentTop="true">
 
-        <EditText
-            android:id="@+id/username_input"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:textSize="16sp"
-            android:hint="John Doe"
-            android:enabled="false"
-            android:textColor="#000000"
-            android:layout_marginBottom="20dp"
-            android:background="@android:color/transparent" />
+            <!-- Profile Picture -->
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/profile_picture_edit"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_marginTop="40dp"
+                android:layout_marginBottom="10dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/baseline_account_circle_24"
+                app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MaterialComponents.Circular" />
 
-        <!-- Email (Uneditable) -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Email"
-            android:textSize="14sp"
-            android:textColor="#808080"
-            android:layout_marginBottom="4dp" />
+            <!-- Edit Profile Picture Text -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Edit Profile Picture"
+                android:textSize="14sp"
+                android:textColor="#FFFFFF"
+                android:layout_marginBottom="20dp" />
 
-        <EditText
-            android:id="@+id/email_input"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:textSize="16sp"
-            android:hint="example@email.com"
-            android:enabled="false"
-            android:inputType="textEmailAddress"
-            android:textColor="#000000"
-            android:layout_marginBottom="20dp"
-            android:background="@android:color/transparent" />
-
-        <!-- New Password Field -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="New Password"
-            android:textSize="14sp"
-            android:textColor="#808080"
-            android:layout_marginBottom="4dp" />
-
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp">
-
-            <!-- Password Input Field -->
-
+            <!-- Username (Uneditable) -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Username"
+                android:textSize="14sp"
+                android:textColor="#FFFFFF"
+                android:layout_marginBottom="4dp" />
 
             <EditText
-                android:id="@+id/new_password_input"
+                android:id="@+id/username_input"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:textSize="16sp"
-                android:hint="......."
-                android:inputType="textPassword"
-                android:textColor="#000000"
-                android:paddingEnd="50dp"
+                android:hint="John Doe"
+                android:enabled="false"
+                android:textColor="#FFFFFF"
                 android:layout_marginBottom="20dp"
-                android:textAppearance="@style/HintStyle" />
+                android:background="@android:color/transparent" />
 
-            <!-- Eye Icon -->
-            <ImageView
-                android:id="@+id/toggle_password_visibility"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="end|center_vertical"
-                android:layout_marginEnd="16dp"
-                android:src="@drawable/eye"
-            android:contentDescription="Toggle password visibility" />
-        </FrameLayout>
+            <!-- Email (Uneditable) -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Email"
+                android:textSize="14sp"
+                android:textColor="#FFFFFF"
+                android:layout_marginBottom="4dp" />
 
+            <EditText
+                android:id="@+id/email_input"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:textSize="16sp"
+                android:hint="example@email.com"
+                android:enabled="false"
+                android:inputType="textEmailAddress"
+                android:textColor="#FFFFFF"
+                android:layout_marginBottom="20dp"
+                android:background="@android:color/transparent" />
 
+            <!-- New Password Field -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="New Password"
+                android:textSize="14sp"
+                android:textColor="#FFFFFF"
+                android:layout_marginBottom="4dp" />
 
-        <!-- Emergency Contact Name -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Emergency Contact Name"
-            android:textSize="14sp"
-            android:textColor="#808080"
-            android:layout_marginBottom="4dp" />
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp">
 
-        <EditText
-            android:id="@+id/emergency_contact_name_input"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:textSize="16sp"
-            android:hint="Enter contact name"
-            android:textColor="#000000"
-            android:layout_marginBottom="20dp" />
+                <!-- Password Input Field -->
+                <EditText
+                    android:id="@+id/new_password_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:textSize="16sp"
+                    android:hint="......."
+                    android:inputType="textPassword"
+                    android:textColor="#FFFFFF"
+                    android:paddingEnd="50dp"
+                    android:layout_marginBottom="20dp"
+                    android:textAppearance="@style/HintStyle" />
 
-        <!-- Emergency Phone Number -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Emergency Phone Number"
-            android:textSize="14sp"
-            android:textColor="#808080"
-            android:layout_marginBottom="4dp" />
+                <!-- Eye Icon -->
+                <ImageView
+                    android:id="@+id/toggle_password_visibility"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="end|center_vertical"
+                    android:layout_marginEnd="16dp"
+                    android:src="@drawable/eye"
+                    app:tint="#FFFFFF"
+                    android:contentDescription="Toggle password visibility" />
+            </FrameLayout>
 
-        <EditText
-            android:id="@+id/emergency_phone_number_input"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:textSize="16sp"
-            android:hint="Enter phone number"
-            android:inputType="phone"
-            android:textColor="#000000"
-            android:layout_marginBottom="30dp" />
+            <!-- Emergency Contact Name -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Emergency Contact Name"
+                android:textSize="14sp"
+                android:textColor="#FFFFFF"
+                android:layout_marginBottom="4dp" />
 
-        <!-- Save Button -->
-        <Button
-            android:id="@+id/save_button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Save Changes"
-            android:backgroundTint="#6200EE"
-            android:textColor="#FFFFFF" />
-    </LinearLayout>
+            <EditText
+                android:id="@+id/emergency_contact_name_input"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:textSize="16sp"
+                android:hint="Enter contact name"
+                android:textColor="#FFFFFF"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Emergency Phone Number -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Emergency Phone Number"
+                android:textSize="14sp"
+                android:textColor="#FFFFFF"
+                android:layout_marginBottom="4dp" />
+
+            <EditText
+                android:id="@+id/emergency_phone_number_input"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:textSize="16sp"
+                android:hint="Enter phone number"
+                android:inputType="phone"
+                android:textColor="#FFFFFF"
+                android:layout_marginBottom="30dp" />
+
+            <!-- Save Button -->
+            <Button
+                android:id="@+id/save_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Save Changes"
+                android:backgroundTint="#6200EE"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
+
+    </RelativeLayout>
 </ScrollView>

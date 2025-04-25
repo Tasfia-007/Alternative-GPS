@@ -13,44 +13,55 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
+
         app:menu="@menu/drawer_menu" />
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        >
 
         <!-- Main FrameLayout Container -->
         <FrameLayout
             android:id="@+id/main_layout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+
+            >
 
             <!-- OSMDroid MapView -->
             <org.osmdroid.views.MapView
                 android:id="@+id/mapview"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
+                android:layout_height="match_parent"
+
+                />
         </FrameLayout>
 
         <ImageButton
             android:id="@+id/direction_button"
-            android:layout_width="63dp"
+            android:layout_width="64dp"
             android:layout_height="64dp"
-            android:layout_above="@id/bottom_panel"
+            android:layout_alignParentBottom="true"
             android:layout_alignParentEnd="true"
             android:layout_margin="16dp"
-            android:background="@android:color/transparent"
+            android:background="@drawable/round_button_background"
             android:elevation="4dp"
             android:padding="12dp"
-            android:src="@drawable/ic_direction_sign" />
+            android:src="@drawable/ic_direction_sign"
+            android:scaleType="centerInside"
+            android:contentDescription="Direction" />
+
+
 
         <!-- Top Bar -->
         <LinearLayout
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#CCFFFFFF"
-            android:padding="10dp">
+
+            android:padding="10dp"
+            android:background="@android:color/transparent">
 
             <!-- Search Box -->
             <LinearLayout
@@ -63,24 +74,29 @@
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:src="@drawable/menubar"
+                    android:background="#009689"
                     android:contentDescription="@string/menu_icon"
+                    android:layout_marginEnd="8dp"
                     android:padding="5dp" />
                 <ImageButton
                     android:id="@+id/voice_search_button"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:src="@drawable/ic_mic"
-                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:background="#009689"
                     android:contentDescription="Voice Search"
+                    android:layout_marginEnd="8dp"
                     android:padding="8dp" />
 
                 <SearchView
                     android:id="@+id/search_view"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="40dp"
                     android:layout_weight="1"
                     android:iconifiedByDefault="false"
+                    android:background="#FFFFFF"
                     android:queryHint="Search location"
+                    android:layout_marginEnd="8dp"
                     android:theme="@style/SearchViewStyle" />
 
                 <ImageView
@@ -89,6 +105,8 @@
                     android:layout_height="40dp"
                     android:src="@drawable/baseline_account_circle_24"
                     android:contentDescription="@string/profile_icon"
+                    android:background="#009689"
+                    android:layout_marginEnd="8dp"
                     android:padding="5dp" />
             </LinearLayout>
 
@@ -105,102 +123,88 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
-
-                    <Button
-                        android:id="@+id/btn_hospitals"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Hospitals"
-                        android:padding="10dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@drawable/rounded_button"
-                        android:alpha="0.7"/> <!-- 70% visible (30% transparent) -->
-
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_banks"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Banks"
-                        android:padding="10dp"
                         android:layout_marginEnd="8dp"
-                        android:background="@drawable/rounded_button"
-                        android:alpha="0.7"/> <!-- Adjust opacity -->
 
-                    <Button
+                        app:backgroundTint="#104B13"
+                        android:padding="10dp"
+                        android:text="Banks"
+                        android:textColor="#FFFFFF" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_hospitals"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        app:backgroundTint="#104B13"
+                        android:padding="10dp"
+                        android:text="Hospitals"
+                        android:textColor="#FFFFFF" />
+
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_schools"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Schools"
-                        android:padding="10dp"
                         android:layout_marginEnd="8dp"
-                        android:background="@drawable/rounded_button"
-                        android:alpha="0.7"/>
 
+                        app:backgroundTint="#104B13"
+                        android:padding="10dp"
+                        android:text="Schools"
+                        android:textColor="#FFFFFF" />
 
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_police"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Police Stations"
-                        android:padding="10dp"
                         android:layout_marginEnd="8dp"
-                        android:background="@drawable/rounded_button"
-                        android:alpha="0.7"/>
 
-                    <Button
+                        app:backgroundTint="#104B13"
+                        android:padding="10dp"
+                        android:text="Police Stations"
+                        android:textColor="#FFFFFF" />
+
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_gas_stations"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Gas Stations"
-                        android:padding="10dp"
                         android:layout_marginEnd="8dp"
-                        android:background="@drawable/rounded_button"
-                        android:alpha="0.7"/>
 
-                    <Button
+                        app:backgroundTint="#104B13"
+                        android:padding="10dp"
+                        android:text="Gas Stations"
+                        android:textColor="#FFFFFF" />
+
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_atms"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="ATMs"
-                        android:padding="10dp"
                         android:layout_marginEnd="8dp"
-                        android:background="@drawable/rounded_button"
-                        android:alpha="0.7"/>
 
-                    <Button
+                        app:backgroundTint="#104B13"
+                        android:padding="10dp"
+                        android:text="ATMs"
+                        android:textColor="#FFFFFF" />
+
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_libraries"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Libraries"
-                        android:padding="10dp"
                         android:layout_marginEnd="8dp"
-                        android:background="@drawable/rounded_button"
-                        android:alpha="0.7"/>
+
+                        app:backgroundTint="#104B13"
+                        android:padding="10dp"
+                        android:text="Libraries"
+                        android:textColor="#FFFFFF" />
+
 
                 </LinearLayout>
             </HorizontalScrollView>
 
         </LinearLayout>
 
-        <!-- Bottom Slide-Up Panel -->
-        <LinearLayout
-            android:id="@+id/bottom_panel"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:layout_alignParentBottom="true"
-            android:orientation="vertical"
-            android:background="#FFFFFF"
-            android:elevation="4dp">
 
-            <TextView
-                android:id="@+id/traffic_summary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/traffic_moderate"
-                android:textSize="16sp"
-                android:padding="10dp"
-                android:gravity="center"
-                android:background="#EEEEEE" />
-        </LinearLayout>
     </RelativeLayout>
 </androidx.drawerlayout.widget.DrawerLayout>
