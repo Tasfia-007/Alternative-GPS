@@ -86,7 +86,6 @@ public class WeatherActivity extends AppCompatActivity {
                 "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/%f,%f?key=%s&contentType=json&unitGroup=metric",
                 lat, lon, API_KEY);
 
-
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder().url(url).build();
 
@@ -155,24 +154,20 @@ public class WeatherActivity extends AppCompatActivity {
         LinearLayout hourlyContainer = findViewById(R.id.hourly_forecast_container);
         runOnUiThread(() -> hourlyContainer.removeAllViews());
 
-        // Loop through each hour
         for (int i = 0; i < hourly.length(); i++) {
             JSONObject hour = hourly.getJSONObject(i);
 
             // Extract data
             String time = hour.getString("datetime");
-            if (time.length() >= 5) {  // Ensure there's at least 'HH:mm' in the string
+            if (time.length() >= 5) {
                 time = time.substring(0, 5); // Extract "HH:mm" format
             } else {
-                time = "Unknown Time"; // If the string is too short, set a default value
+                time = "Unknown Time"; // Default value
             }
 
             double temp = hour.getDouble("temp");
             String hourlyCondition = hour.getString("conditions");
             double rainChance = hour.getDouble("precipprob");
-
-            // Extract the hourly precipitation (mm)
-            double hourlyPrecipitation = hour.getDouble("precip");
 
             // Create new layout for each hour (vertical)
             LinearLayout hourBlock = new LinearLayout(this);
@@ -185,13 +180,15 @@ public class WeatherActivity extends AppCompatActivity {
             timeView.setTextSize(16);
             timeView.setGravity(Gravity.CENTER);
             timeView.setTypeface(null, Typeface.BOLD);
+            timeView.setTextColor(getResources().getColor(android.R.color.black));  // Set time text color to black
 
             // Weather Info TextView (Below)
             TextView infoView = new TextView(this);
             infoView.setText(String.format("%.1f°C\n%s\n🌧️ %.1f%% chance of rain\n💧 %.1f mm precipitation",
-                    temp, hourlyCondition, rainChance, hourlyPrecipitation));
+                    temp, hourlyCondition, rainChance, hour.getDouble("precip")));
             infoView.setTextSize(14);
             infoView.setGravity(Gravity.CENTER);
+            infoView.setTextColor(getResources().getColor(android.R.color.black));  // Set weather info text color to black
 
             // Add views to layout
             hourBlock.addView(timeView);
@@ -232,6 +229,7 @@ public class WeatherActivity extends AppCompatActivity {
             dateView.setTextSize(16);
             dateView.setGravity(Gravity.CENTER);
             dateView.setTypeface(null, Typeface.BOLD);
+            dateView.setTextColor(getResources().getColor(android.R.color.black));  // Set date text color to black
 
             TextView dayInfoView = new TextView(this);
             dayInfoView.setText(String.format(
@@ -240,16 +238,14 @@ public class WeatherActivity extends AppCompatActivity {
 
             dayInfoView.setTextSize(14);
             dayInfoView.setGravity(Gravity.CENTER);
+            dayInfoView.setTextColor(getResources().getColor(android.R.color.black));  // Set day info text color to black
 
             dayBlock.addView(dateView);
             dayBlock.addView(dayInfoView);
 
             runOnUiThread(() -> upcomingContainer.addView(dayBlock));
         }
-
     }
-
-
 
     private void logError(String title, String message) {
         String logMsg = String.format("%s: %s\n", title, message);
@@ -257,6 +253,7 @@ public class WeatherActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             if (logView != null) {
                 logView.append(logMsg);
+                logView.setTextColor(getResources().getColor(android.R.color.black));  // Set text color to black
             } else {
                 Toast.makeText(this, logMsg, Toast.LENGTH_LONG).show();
             }
