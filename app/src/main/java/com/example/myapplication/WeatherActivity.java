@@ -4,7 +4,9 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.location.Location;
+
 import android.os.AsyncTask;
+
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -33,6 +35,7 @@ import java.util.Locale;
 
 import okhttp3.Call;
 import okhttp3.Callback;
+
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -47,6 +50,7 @@ public class WeatherActivity extends AppCompatActivity {
     private final Handler handler = new Handler();
     private Runnable updateTimeRunnable;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,6 +58,7 @@ public class WeatherActivity extends AppCompatActivity {
 
         currentWeather = findViewById(R.id.current_weather);
         logView = findViewById(R.id.logView);
+
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         getCurrentLocation();
@@ -66,6 +71,7 @@ public class WeatherActivity extends AppCompatActivity {
             return;
         }
 
+
         fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
             if (location != null) {
                 fetchWeatherData(location.getLatitude(), location.getLongitude());
@@ -73,6 +79,7 @@ public class WeatherActivity extends AppCompatActivity {
                 logError("Location Error", "Failed to fetch location.");
             }
         }).addOnFailureListener(e -> logError("Location Failure", e.getMessage()));
+
     }
 
     private void fetchWeatherData(double lat, double lon) {
@@ -97,7 +104,9 @@ public class WeatherActivity extends AppCompatActivity {
                 }
 
                 try {
+
                     String responseString = response.body().string();
+
                     JSONObject jsonResponse = new JSONObject(responseString);
                     parseWeatherData(jsonResponse);
                 } catch (JSONException e) {
@@ -108,6 +117,7 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
     private void parseWeatherData(JSONObject json) throws JSONException {
+
         Log.d("WeatherActivity", "parseWeatherData called with JSON: " + json.toString());
         JSONObject current = json.getJSONObject("currentConditions");
         double temperature = current.getDouble("temp");
@@ -125,9 +135,11 @@ public class WeatherActivity extends AppCompatActivity {
         updateUI(findViewById(R.id.wind_info), String.format("💨 Wind: %.1f km/h", windSpeed));
         updateUI(findViewById(R.id.humidity_info), String.format("💧 Humidity: %d%%", humidity));
         updateUI(findViewById(R.id.precipitation_info), String.format("🌧️ Precipitation: %.1f mm", precipitation));
+
         updateUI(findViewById(R.id.tempmax_info), String.format("Max Temp: %.1f°C", tempMax));
         updateUI(findViewById(R.id.tempmin_info), String.format("Min Temp: %.1f°C", tempMin));
         updateUI(findViewById(R.id.feelslike_info), String.format("Feels Like: %.1f°C", feelsLike));
+
 
 
 
@@ -159,6 +171,7 @@ public class WeatherActivity extends AppCompatActivity {
             timeView.setGravity(Gravity.CENTER);
             timeView.setTypeface(null, Typeface.BOLD);
 
+
             TextView infoView = new TextView(this);
             infoView.setText(String.format(
                     "%.1f°C\n%s\n🌧️ %.1f%%\n💧 %.1f mm",
@@ -187,14 +200,17 @@ public class WeatherActivity extends AppCompatActivity {
             long timeEpoch = day.getLong("datetimeEpoch") * 1000L;
             String formattedDate = new SimpleDateFormat("dd MMM, EEE", Locale.getDefault()).format(new Date(timeEpoch));
             double currentTemp = day.getDouble("temp");
+
             double maxTemp = day.getDouble("tempmax");
             double minTemp = day.getDouble("tempmin");
             String dayCondition = day.getString("conditions");
             double rainChance = day.getDouble("precipprob");
             double dailyPrecipitation = day.getDouble("precip");
 
+
             upcomingSummaryData.append(String.format("On %s: %.1f°C, %.1f°C/%.1f°C, %s, %.1f%% rain, %.1f mm precipitation\n",
                     formattedDate, currentTemp, maxTemp, minTemp, dayCondition, rainChance, dailyPrecipitation));
+
 
             LinearLayout dayBlock = new LinearLayout(this);
             dayBlock.setOrientation(LinearLayout.VERTICAL);
@@ -206,11 +222,13 @@ public class WeatherActivity extends AppCompatActivity {
             dateView.setGravity(Gravity.CENTER);
             dateView.setTypeface(null, Typeface.BOLD);
 
+
             TextView dayInfoView = new TextView(this);
             dayInfoView.setText(String.format("🌡️ %.1f°C\n%.1f°C/%.1f°C\n%s\n🌧️ %.1f%%\n💧 %.1f mm",
                     currentTemp, maxTemp, minTemp, dayCondition, rainChance, dailyPrecipitation));
             dayInfoView.setTextSize(14);
             dayInfoView.setGravity(Gravity.CENTER);
+
 
             dayBlock.addView(dateView);
             dayBlock.addView(dayInfoView);
@@ -428,10 +446,12 @@ public class WeatherActivity extends AppCompatActivity {
 
     private void logError(String title, String message) {
         String logMsg = title + ": " + message + "\n";
+
         Log.e(TAG, logMsg);
         runOnUiThread(() -> {
             if (logView != null) {
                 logView.append(logMsg);
+
             } else {
                 Toast.makeText(this, logMsg, Toast.LENGTH_LONG).show();
             }
@@ -441,6 +461,7 @@ public class WeatherActivity extends AppCompatActivity {
     private void updateUI(TextView textView, String data) {
         runOnUiThread(() -> textView.setText(data));
     }
+
 
     @Override
     protected void onResume() {
@@ -455,6 +476,7 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
     private void startUpdatingTime() {
+
         updateTimeRunnable = () -> {
             String date = new SimpleDateFormat("dd MMM, EEEE, yyyy", Locale.getDefault()).format(new Date());
             String time = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
@@ -466,6 +488,7 @@ public class WeatherActivity extends AppCompatActivity {
 
             handler.postDelayed(updateTimeRunnable, 1000);
         };
+
         handler.post(updateTimeRunnable);
     }
 
