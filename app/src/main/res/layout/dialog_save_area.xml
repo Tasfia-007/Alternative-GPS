@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Place Name Input -->
+        <EditText
+            android:id="@+id/place_name_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Place Name"
+            android:inputType="textPersonName" />
+
+        <!-- Water Level Input -->
+        <EditText
+            android:id="@+id/water_level_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Water Level"
+            android:inputType="numberDecimal" />
+
+        <!-- Comment Input -->
+        <EditText
+            android:id="@+id/comment_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Comment (Optional)"
+            android:inputType="textMultiLine"
+            android:minLines="3"
+            android:gravity="top" />
+
+        <!-- Take Picture Button -->
+        <Button
+            android:id="@+id/take_picture_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Take Picture"
+            android:layout_marginTop="16dp"
+            android:layout_gravity="center_horizontal" />
+
+    </LinearLayout>
+
+</ScrollView>

@@ -9,8 +9,8 @@
         android:id="@+id/report_issue"
         android:title="Report Issue" />
     <item
-        android:id="@+id/settings"
-        android:title="Settings" />
+        android:id="@+id/water"
+        android:title="Water Logged Area Reported by user" />
     <item
         android:id="@+id/alert"
         android:title="Alert" />
