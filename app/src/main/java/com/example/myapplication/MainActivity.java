@@ -250,7 +250,7 @@ public class MainActivity extends AppCompatActivity {
 
 //for map location
 
-//        checkAndCleanupPreviousDay();
+        checkAndCleanupPreviousDay();
 
 
 
@@ -358,57 +358,57 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Save summary data (e.g., total precipitation)
-//        saveTodaySummaryIntoSupabase(jsonResponse, hourlyArray);
+        saveTodaySummaryIntoSupabase(jsonResponse, hourlyArray);
     }
 
 
-//    private void saveTodaySummaryIntoSupabase(JSONObject json, JSONArray hourly) {
-//        try {
-//            String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-//            double cumulativePrecip = 0.0; // Initialize cumulative precipitation
-//
-//            // Fetch yesterday's 23rd hour precipitation (if it exists)
-//            double yesterday23Precip = getYesterdayHour23Precipitation();
-//            cumulativePrecip += yesterday23Precip; // Add yesterday's precipitation to cumulative
-//
-//            for (int i = 0; i < hourly.length(); i++) {
-//                JSONObject hour = hourly.getJSONObject(i);
-//
-//                // Extract the hour (e.g., "14:00:00" -> 14)
-//                int timeHour = Integer.parseInt(hour.getString("datetime").substring(0, 2));
-//
-//                // Get precipitation for this hour
-//                double precip = hour.getDouble("precip");
-//
-//                // Special case: If time_hour = 0 and cumulativePrecip is adjusted
-//                if (timeHour == 0 && precip > 0 && yesterday23Precip > 0) {
-//                    // Add yesterday's 23-hour precip to today's 0-hour precip
-//                    cumulativePrecip += yesterday23Precip;
-//                } else {
-//                    // Update cumulative precipitation as usual
-//                    if (precip > 0) {
-//                        cumulativePrecip += precip;
-//                    } else {
-//                        cumulativePrecip = 0.0;  // Reset cumulative precipitation if no precipitation
-//                    }
-//                }
-//
-//                // Prepare summary data to insert
-//                JSONObject summaryData = new JSONObject();
-//                summaryData.put("date", todayDate);
-//                summaryData.put("time_hour", timeHour);  // Use time_hour for the hour value
-//                summaryData.put("prec", precip);
-//                summaryData.put("total_precipitation", cumulativePrecip); // Adjusted total precipitation
-//
-//                Log.d(TAG, "Uploading summary data for hour " + timeHour + ": " + summaryData.toString());
-//
-//                // Insert the data into Supabase
-//                insertIntoSupabase("current_day_summary", summaryData);
-//            }
-//        } catch (Exception e) {
-//            Log.e(TAG, "Error saving summary data: " + e.getMessage());
-//        }
-//    }
+    private void saveTodaySummaryIntoSupabase(JSONObject json, JSONArray hourly) {
+        try {
+            String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+            double cumulativePrecip = 0.0; // Initialize cumulative precipitation
+
+            // Fetch yesterday's 23rd hour precipitation (if it exists)
+            double yesterday23Precip = getYesterdayHour23Precipitation();
+            cumulativePrecip += yesterday23Precip; // Add yesterday's precipitation to cumulative
+
+            for (int i = 0; i < hourly.length(); i++) {
+                JSONObject hour = hourly.getJSONObject(i);
+
+                // Extract the hour (e.g., "14:00:00" -> 14)
+                int timeHour = Integer.parseInt(hour.getString("datetime").substring(0, 2));
+
+                // Get precipitation for this hour
+                double precip = hour.getDouble("precip");
+
+                // Special case: If time_hour = 0 and cumulativePrecip is adjusted
+                if (timeHour == 0 && precip > 0 && yesterday23Precip > 0) {
+                    // Add yesterday's 23-hour precip to today's 0-hour precip
+                    cumulativePrecip += yesterday23Precip;
+                } else {
+                    // Update cumulative precipitation as usual
+                    if (precip > 0) {
+                        cumulativePrecip += precip;
+                    } else {
+                        cumulativePrecip = 0.0;  // Reset cumulative precipitation if no precipitation
+                    }
+                }
+
+                // Prepare summary data to insert
+                JSONObject summaryData = new JSONObject();
+                summaryData.put("date", todayDate);
+                summaryData.put("time_hour", timeHour);  // Use time_hour for the hour value
+                summaryData.put("prec", precip);
+                summaryData.put("total_precipitation", cumulativePrecip); // Adjusted total precipitation
+
+                Log.d(TAG, "Uploading summary data for hour " + timeHour + ": " + summaryData.toString());
+
+                // Insert the data into Supabase
+                insertIntoSupabase("current_day_summary", summaryData);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error saving summary data: " + e.getMessage());
+        }
+    }
 
 
 
