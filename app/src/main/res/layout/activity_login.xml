@@ -1,77 +1,85 @@
-<LinearLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="20dp"
-    android:gravity="center"
-    android:background="#F9F9F9">
+    android:layout_height="match_parent">
 
-    <!-- App Logo -->
+    <!-- Background Image -->
     <ImageView
-        android:id="@+id/app_logo"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:src="@drawable/baseline_account_circle_24"
-        android:contentDescription="App Logo"
-        android:layout_gravity="center"
-        android:layout_marginBottom="20dp" />
-
-    <!-- Login Title -->
-    <TextView
-        android:id="@+id/login_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Login"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="#333333"
-        android:layout_gravity="center"
-        android:layout_marginBottom="20dp" />
-
-    <!-- Email Input -->
-    <EditText
-        android:id="@+id/email_input"
+        android:id="@+id/bg_map_image"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Email"
-        android:inputType="textEmailAddress"
-        android:padding="10dp"
+        android:layout_height="match_parent"
+        android:src="@drawable/login_bg"
+        android:scaleType="centerCrop"
+        android:alpha="0.7" /> <!-- Adjust transparency -->
 
-        android:layout_marginBottom="10dp" />
-
-    <!-- Password Input -->
-    <EditText
-        android:id="@+id/password_input"
+    <!-- Foreground Login UI -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Password"
-        android:inputType="textPassword"
-        android:padding="10dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="24dp">
 
-        android:layout_marginBottom="10dp" />
+        <ImageView
+            android:id="@+id/app_logo"
+            android:layout_width="96dp"
+            android:layout_height="93dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="20dp"
+            android:src="@drawable/images" />
 
-    <!-- Login Button -->
-    <Button
-        android:id="@+id/login_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Login"
-        android:backgroundTint="#6200EE"
-        android:textColor="#FFFFFF"
-        android:layout_marginBottom="20dp" />
+        <TextView
+            android:id="@+id/login_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Login"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#2E7D32"
+            android:layout_gravity="center"
+            android:layout_marginBottom="24dp" />
 
-    <!-- Google Login -->
+        <EditText
+            android:id="@+id/email_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Email"
+            android:inputType="textEmailAddress"
+            android:padding="14dp"
+            android:background="@drawable/rounded_edittext_bg"
+            android:layout_marginBottom="12dp"/>
 
-    <!-- Signup Redirect -->
-    <TextView
-        android:id="@+id/signup_redirect"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Don't have an account? Sign Up"
-        android:textColor="#6200EE"
-        android:textSize="16sp"
-        android:layout_gravity="center"
-        android:clickable="true"
-        android:focusable="true" />
-</LinearLayout>
+        <EditText
+            android:id="@+id/password_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Password"
+            android:inputType="textPassword"
+            android:padding="14dp"
+            android:background="@drawable/rounded_edittext_bg"
+            android:layout_marginBottom="18dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/login_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Login"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#4CAF50"
+
+            android:layout_marginBottom="20dp" />
+
+        <TextView
+            android:id="@+id/signup_redirect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Don't have an account? Sign Up"
+            android:textColor="#2E7D32"
+            android:textSize="16sp"
+            android:layout_gravity="center"
+            android:clickable="true"
+            android:focusable="true" />
+
+    </LinearLayout>
+</FrameLayout>

@@ -107,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
         drawerLayout = findViewById(R.id.drawer_layout);
         ImageView menuIcon = findViewById(R.id.menu_icon);
         profileIcon = findViewById(R.id.profile_icon);
-        trafficSummary = findViewById(R.id.traffic_summary);
+
         searchView = findViewById(R.id.search_view);
         ImageButton directionButton = findViewById(R.id.direction_button);
         directionButton.setOnClickListener(v -> {
@@ -190,10 +190,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-        // Bottom Panel Click Listener
-        trafficSummary.setOnClickListener(v -> {
-            Toast.makeText(this, "Traffic Summary Clicked", Toast.LENGTH_SHORT).show();
-        });
+
 
 
         fetchPOIs(); // Ensure POIs are loaded before filtering

@@ -4,6 +4,9 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.location.Location;
+
+import android.os.AsyncTask;
+
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;

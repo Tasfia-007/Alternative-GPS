@@ -16,6 +16,7 @@ public class WeatherService {
     private static final String TAG = "WeatherService";
     private static final OkHttpClient client = new OkHttpClient();
 
+
     public static void fetchWeatherData(Context context, double latitude, double longitude, WeatherDataListener listener) {
         @SuppressLint("DefaultLocale")
         String apiUrl = String.format(

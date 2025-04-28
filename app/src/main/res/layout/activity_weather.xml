@@ -1,250 +1,258 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:background="@color/white">
 
-    <!-- Top Date & Time Box -->
+    android:background="@drawable/weather_bg">
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/rounded_transparent_bg"
         android:orientation="vertical"
-        android:padding="10dp"
-        android:gravity="center"
-        android:layout_marginBottom="12dp">
 
-        <TextView
-            android:id="@+id/current_date"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Date: Loading..."
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:padding="5dp"
-            android:gravity="center"/>
+        android:padding="16dp">
 
-        <TextView
-            android:id="@+id/current_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Time: Loading..."
-            android:textSize="16sp"
-            android:padding="5dp"
-            android:gravity="center"/>
-    </LinearLayout>
-
-    <View
-        android:layout_width="380dp"
-        android:layout_height="2dp"
-        android:background="@color/black"
-        android:layout_gravity="center"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp"/>
-
-    <!-- Current Weather Section -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/rounded_transparent_bg"
-        android:orientation="horizontal"
-        android:padding="10dp"
-        android:gravity="center"
-        android:layout_marginBottom="12dp">
-
-        <!-- Left Side: Temperature, Condition, FeelsLike -->
+        <!-- Date & Time Section -->
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:orientation="vertical"
-            android:gravity="center">
+            android:padding="10dp"
+            android:gravity="center"
+            android:layout_marginBottom="12dp">
 
             <TextView
-                android:id="@+id/current_weather"
+                android:id="@+id/current_date"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Temperature: Loading..."
-                android:textSize="20sp"
+                android:text="Date: Loading..."
+                android:textSize="18sp"
                 android:textStyle="bold"
                 android:padding="5dp"
-                android:gravity="center"/>
+                android:textColor="#000000"
+                android:gravity="center" />
 
             <TextView
-                android:id="@+id/weather_condition"
+                android:id="@+id/current_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Condition: Loading..."
+                android:text="Time: Loading..."
                 android:textSize="16sp"
                 android:padding="5dp"
-                android:gravity="center"/>
-
-            <TextView
-                android:id="@+id/feelslike_info"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Feels Like: Loading..."
-                android:textSize="16sp"
-                android:padding="5dp"
-                android:gravity="center"/>
-
+                android:textColor="#000000"
+                android:gravity="center" />
         </LinearLayout>
 
-        <!-- Separator Line -->
+        <!-- Divider -->
         <View
-            android:layout_width="2dp"
-            android:layout_height="60dp"
-            android:background="@color/black"
+            android:layout_width="380dp"
+            android:layout_height="2dp"
+            android:background="#B0BEC5"
+            android:layout_gravity="center"
             android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp"
-            android:layout_marginLeft="8dp"
-            android:layout_marginRight="8dp"/>
+            android:layout_marginBottom="10dp" />
 
-        <!-- Right Side: Wind, Humidity, Precipitation, TempMax, TempMin -->
+        <!-- Current Weather Details -->
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center">
-
-            <TextView
-                android:id="@+id/wind_info"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Wind: Loading..."
-                android:textSize="16sp"
-                android:padding="5dp"
-                android:gravity="center"/>
-
-            <TextView
-                android:id="@+id/humidity_info"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Humidity: Loading..."
-                android:textSize="16sp"
-                android:padding="5dp"
-                android:gravity="center"/>
-
-            <TextView
-                android:id="@+id/precipitation_info"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Precipitation: Loading..."
-                android:textSize="16sp"
-                android:padding="5dp"
-                android:gravity="center"/>
-
-            <TextView
-                android:id="@+id/tempmax_info"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Max Temp: Loading..."
-                android:textSize="16sp"
-                android:padding="5dp"
-                android:gravity="center"/>
-
-            <TextView
-                android:id="@+id/tempmin_info"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Min Temp: Loading..."
-                android:textSize="16sp"
-                android:padding="5dp"
-                android:gravity="center"/>
-
-        </LinearLayout>
-    </LinearLayout>
-
-    <View
-        android:layout_width="200dp"
-        android:layout_height="2dp"
-        android:background="@color/black"
-        android:layout_gravity="center"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp"/>
-
-    <!-- Hourly Weather Section -->
-    <TextView
-        android:id="@+id/full_hourly_weather_headline"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Hourly Forecast"
-        android:textSize="18sp"
-        android:padding="10dp"
-        android:gravity="center"
-        android:background="@drawable/rounded_bg1"
-        android:layout_marginBottom="5dp"/>
-
-    <HorizontalScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fillViewport="true"
-        android:scrollbars="none">
-
-        <LinearLayout
-            android:id="@+id/hourly_forecast_container"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:padding="10dp"
-            android:background="#F1FFFE"/>
+            android:gravity="center"
+            android:layout_marginBottom="12dp">
 
-    </HorizontalScrollView>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
 
-    <View
-        android:layout_width="200dp"
-        android:layout_height="2dp"
-        android:background="@color/black"
-        android:layout_gravity="center"
-        android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp"/>
+                <TextView
+                    android:id="@+id/current_weather"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Temperature: Loading..."
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="#000000"
+                    android:padding="5dp" />
 
-    <!-- Upcoming Forecast -->
-    <TextView
-        android:id="@+id/upcoming_forecast_headline"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Upcoming Forecast"
-        android:textSize="18sp"
-        android:padding="10dp"
-        android:gravity="center"
-        android:background="@drawable/rounded_bg1"
-        android:layout_marginBottom="5dp"/>
+                <TextView
+                    android:id="@+id/weather_condition"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Condition: Loading..."
+                    android:textSize="16sp"
+                    android:textColor="#000000"
+                    android:padding="5dp" />
 
-    <HorizontalScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fillViewport="true"
-        android:scrollbars="none">
+                <TextView
+                    android:id="@+id/feelslike_info"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Feels Like: Loading..."
+                    android:textSize="16sp"
+                    android:textColor="#000000"
+                    android:padding="5dp" />
+            </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/upcoming_forecast_container"
-            android:layout_width="wrap_content"
+            <View
+                android:layout_width="2dp"
+                android:layout_height="60dp"
+                android:background="#B0BEC5"
+                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/wind_info"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Wind: Loading..."
+                    android:textSize="16sp"
+                    android:textColor="#000000"
+                    android:padding="5dp" />
+
+                <TextView
+                    android:id="@+id/humidity_info"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Humidity: Loading..."
+                    android:textSize="16sp"
+                    android:textColor="#000000"
+                    android:padding="5dp" />
+
+                <TextView
+                    android:id="@+id/precipitation_info"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Precipitation: Loading..."
+                    android:textSize="16sp"
+                    android:textColor="#000000"
+                    android:padding="5dp" />
+
+                <TextView
+                    android:id="@+id/tempmax_info"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Max Temp: Loading..."
+                    android:textSize="16sp"
+                    android:textColor="#000000"
+                    android:padding="5dp" />
+
+                <TextView
+                    android:id="@+id/tempmin_info"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Min Temp: Loading..."
+                    android:textSize="16sp"
+                    android:textColor="#000000"
+                    android:padding="5dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="200dp"
+            android:layout_height="2dp"
+            android:background="#B0BEC5"
+            android:layout_gravity="center"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp" />
+
+        <!-- Hourly Forecast Section -->
+        <TextView
+            android:id="@+id/full_hourly_weather_headline"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="#F1FFFE"
-            android:padding="10dp"/>
-    </HorizontalScrollView>
+            android:text="Hourly Forecast"
+            android:textSize="18sp"
+            android:padding="10dp"
+            android:gravity="center"
+            android:background="#E3F2FD"
+            android:textColor="#000000"
+            android:layout_marginBottom="5dp" />
 
-    <!-- Log Section for Errors -->
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:background="@color/black">
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fillViewport="true"
+            android:scrollbars="none">
 
-        <!-- TextView for displaying logs -->
+            <LinearLayout
+                android:id="@+id/hourly_forecast_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="10dp"
+                android:background="#E1F5FE" />
+        </HorizontalScrollView>
+
+
+        <!-- Hourly Description -->
+
+
+        <!-- Divider -->
+        <View
+            android:layout_width="200dp"
+            android:layout_height="2dp"
+            android:background="#B0BEC5"
+            android:layout_gravity="center"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp" />
+
+        <!-- Upcoming Forecast Section -->
+        <TextView
+            android:id="@+id/upcoming_forecast_headline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Upcoming Forecast"
+            android:textSize="18sp"
+            android:padding="10dp"
+            android:gravity="center"
+            android:background="#E3F2FD"
+            android:textColor="#000000"
+            android:layout_marginBottom="5dp" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fillViewport="true"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/upcoming_forecast_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="10dp"
+                android:background="#E1F5FE" />
+        </HorizontalScrollView>
+
+
+
+
+
+        <!-- Log View -->
+
         <TextView
             android:id="@+id/logView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Log: Loading..."
-            android:textColor="@android:color/white"
-            android:padding="10dp"
-            android:scrollbars="vertical"/>
-    </ScrollView>
+            android:textColor="#FFFFFF"
 
-</LinearLayout>
+            android:background="#263238"
+            android:padding="10dp"
+            android:layout_marginTop="10dp" />
+
+    </LinearLayout>
+</ScrollView>
+
