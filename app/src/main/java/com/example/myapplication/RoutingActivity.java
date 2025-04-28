@@ -318,18 +318,22 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.VectorDrawable;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import org.json.JSONException;
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
 import org.osmdroid.util.GeoPoint;
@@ -342,10 +346,18 @@ import org.osmdroid.views.overlay.Polygon;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -362,8 +374,9 @@ public class RoutingActivity extends AppCompatActivity {
 
     private List<Polygon> savedPolygons = new ArrayList<>(); // List to store saved polygons
 
-    private static final String TAG = "RoutingActivity"; // For logging
-
+    private static final String TAG = "RoutingActivity";
+    private static final String SUPABASE_URL = "https://kquvuygavkhsxvdpqyfn.supabase.co"; // Replace with your Supabase URL
+    private static final String SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdXZ1eWdhdmtoc3h2ZHBxeWZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzcxMDQ4NjcsImV4cCI6MjA1MjY4MDg2N30.YVPKExfM-ZxzO9JvM9RQZQrBiyG1iT50fiwGUcvw8EI";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -387,7 +400,10 @@ public class RoutingActivity extends AppCompatActivity {
         Log.d(TAG, "Map initialized successfully.");
 
         // Load polygons from CSV in assets folder
-        loadPolygonsFromAssets();
+//        loadPolygonsFromAssets();
+        //from database :)
+        loadPolygonsFromDatabase();
+
 
         // Default mode is "driving"
         final String[] selectedMode = {"driving"};
@@ -448,6 +464,417 @@ public class RoutingActivity extends AppCompatActivity {
             }
         });
     }
+
+
+
+
+
+
+
+// data from database :)
+
+
+//    private List<Polygon> savedPolygons = new ArrayList<>();
+    private List<Integer> polygonIds = new ArrayList<>();
+    private List<Float> polygonWaterLevels = new ArrayList<>();
+
+    private void loadPolygonsFromDatabase() {
+        OkHttpClient client = new OkHttpClient();
+
+        String url = SUPABASE_URL + "/rest/v1/polygon_data";
+
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("apikey", SUPABASE_KEY)
+                .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
+                .addHeader("Accept", "application/json")
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Error fetching polygon data: " + e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful() && response.body() != null) {
+                    String jsonResponse = response.body().string();
+                    runOnUiThread(() -> {
+                        try {
+                            parsePolygonData(jsonResponse);
+                            fetchVisibilityData();  // 🆕 After loading polygons, check which are visible
+                        } catch (JSONException e) {
+                            Log.e(TAG, "Error parsing polygon data: " + e.getMessage());
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+
+
+    private List<String> polygonStartTimes = new ArrayList<>();
+    private List<String> polygonEndTimes = new ArrayList<>();
+    private List<Marker> polygonMarkers = new ArrayList<>();
+
+
+
+
+    private void parsePolygonData(String jsonResponse) throws JSONException {
+        savedPolygons.clear();
+        polygonIds.clear();
+        polygonWaterLevels.clear();
+
+        JSONArray polygonsArray = new JSONArray(jsonResponse);
+
+        for (int i = 0; i < polygonsArray.length(); i++) {
+            JSONObject polygonObject = polygonsArray.getJSONObject(i);
+
+            int polygonId = polygonObject.getInt("id");
+            double lat1 = polygonObject.getDouble("point_1_latitude");
+            double lon1 = polygonObject.getDouble("point_1_longitude");
+            double lat2 = polygonObject.getDouble("point_2_latitude");
+            double lon2 = polygonObject.getDouble("point_2_longitude");
+            double lat3 = polygonObject.getDouble("point_3_latitude");
+            double lon3 = polygonObject.getDouble("point_3_longitude");
+            double lat4 = polygonObject.getDouble("point_4_latitude");
+            double lon4 = polygonObject.getDouble("point_4_longitude");
+            float waterLevel = (float) polygonObject.getDouble("water_level");
+
+            GeoPoint p1 = new GeoPoint(lat1, lon1);
+            GeoPoint p2 = new GeoPoint(lat2, lon2);
+            GeoPoint p3 = new GeoPoint(lat3, lon3);
+            GeoPoint p4 = new GeoPoint(lat4, lon4);
+
+            List<GeoPoint> points = new ArrayList<>();
+            points.add(p1);
+            points.add(p2);
+            points.add(p3);
+            points.add(p4);
+
+            Polygon polygon = new Polygon();
+            polygon.setPoints(points);
+            polygon.setFillColor(Color.TRANSPARENT);
+            polygon.setStrokeColor(Color.BLACK);
+            polygon.setStrokeWidth(2.5f);
+
+            savedPolygons.add(polygon);
+            polygonIds.add(polygonId);
+            polygonWaterLevels.add(waterLevel);
+
+            mapView.getOverlays().add(polygon);
+
+            // 🆕 🆕 🆕  ADD MARKER HERE INSIDE LOOP!
+            Marker marker = new Marker(mapView);
+            marker.setPosition(p1);
+            marker.setTitle("Polygon ID: " + polygonId);
+
+// Temporarily simple click
+            marker.setOnMarkerClickListener((clickedMarker, clickedMapView) -> {
+                Toast.makeText(this, "Polygon ID: " + polygonId, Toast.LENGTH_SHORT).show();
+                return true;
+            });
+
+            mapView.getOverlays().add(marker);
+            polygonMarkers.add(marker); // 🆕 Save marker to list
+
+        }
+
+        mapView.invalidate();
+    }
+    private String getLiveMarkerInfo(int polygonId, float waterLevel) {
+        StringBuilder infoBuilder = new StringBuilder();
+        String nowTime = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
+
+        infoBuilder.append("⏰ Current Time: ").append(nowTime).append("\n");
+
+        // Check if polygon is currently active
+        for (int i = 0; i < polygonIds.size(); i++) {
+            if (polygonIds.get(i) == polygonId) {
+                // Assume you already have visibility data loaded
+                // You can store visibilityStartTimes and visibilityEndTimes in two separate lists if needed
+                // For now just example:
+                // Example only! You need real start/end times based on your visibility dataset
+                String startTime = "10:00"; // Placeholder
+                String endTime = "15:00";   // Placeholder
+
+                try {
+                    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+                    Date now = sdf.parse(nowTime.substring(0, 5));
+                    Date start = sdf.parse(startTime);
+                    Date end = sdf.parse(endTime);
+
+                    if (now != null && start != null && end != null) {
+                        if (now.compareTo(start) >= 0 && now.compareTo(end) <= 0) {
+                            infoBuilder.append("✅ This area is water blocked\n");
+                            infoBuilder.append("Water Level: ").append(getWaterLevelDescription(waterLevel)).append("\n");
+                        } else {
+                            infoBuilder.append("⚠️ Warning: Water Blocked from ")
+                                    .append(startTime)
+                                    .append(" to ")
+                                    .append(endTime)
+                                    .append("\nWater Level: ")
+                                    .append(getWaterLevelDescription(waterLevel))
+                                    .append("\n");
+                        }
+                    }
+                } catch (ParseException e) {
+                    infoBuilder.append("Error parsing time");
+                }
+                break;
+            }
+        }
+
+        return infoBuilder.toString();
+    }
+
+
+
+
+    private String getWaterLevelDescription(float waterLevel) {
+        switch ((int) waterLevel) {
+            case 1:
+                return "Not much water ";
+            case 2:
+                return "Significant water accumulation";
+            case 3:
+                return "High water level - caution advised";
+            case 4:
+                return "Very high water level -try to avoid this road";
+            default:
+                return "Unknown water level";
+        }
+
+    }
+
+
+
+
+    private void showLiveInfoDialog(String startTime, String endTime, float waterLevel, int polygonId) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Polygon " + polygonId + " Info");
+
+        final TextView clockView = new TextView(this);
+        final TextView statusView = new TextView(this);
+
+        clockView.setPadding(20, 20, 20, 20);
+        statusView.setPadding(20, 20, 20, 20);
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.addView(clockView);
+        layout.addView(statusView);
+
+        builder.setView(layout);
+        builder.setPositiveButton("Close", (dialog, which) -> dialog.dismiss());
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        Handler handler = new Handler();
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                String currentTime = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
+                clockView.setText("⏰ Current Time: " + currentTime);
+
+                try {
+                    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+                    Date now = sdf.parse(currentTime.substring(0,5));
+                    Date start = sdf.parse(startTime);
+                    Date end = sdf.parse(endTime);
+
+                    if (now != null && start != null && end != null) {
+                        if (now.compareTo(start) >= 0 && now.compareTo(end) <= 0) {
+                            statusView.setText("🛑 Water: Water Blockage\n" +
+                                    "🌊 Water Level: " + getWaterLevelDescription(waterLevel));
+                        } else {
+                            statusView.setText("⚠️ Warning: Water blockage from " + startTime + " to " + endTime +
+                                    "\n🌊 Water Level: " + getWaterLevelDescription(waterLevel));
+                        }
+                    }
+                } catch (ParseException e) {
+                    statusView.setText("Error parsing time!");
+                }
+
+                handler.postDelayed(this, 1000); // Update every second
+            }
+        };
+        handler.post(runnable);
+
+        dialog.setOnDismissListener(d -> handler.removeCallbacks(runnable));
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+    private void fetchVisibilityData() {
+        OkHttpClient client = new OkHttpClient();
+
+        String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+
+        String url = SUPABASE_URL + "/rest/v1/polygon_visibility"
+                + "?select=polygon_id,visibility_start_time,visibility_end_time"
+                + "&is_visible=eq.true"; // Only fetch visible polygons
+
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("apikey", SUPABASE_KEY)
+                .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
+                .addHeader("Accept", "application/json")
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Error fetching visibility data: " + e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful() && response.body() != null) {
+                    String responseBody = response.body().string();
+                    runOnUiThread(() -> {
+                        try {
+                            applyVisibility(new JSONArray(responseBody));
+                        } catch (JSONException e) {
+                            Log.e(TAG, "Error parsing visibility data: " + e.getMessage());
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+
+    private void applyVisibility(JSONArray visibilityArray) throws JSONException {
+        boolean anyPolygonVisible = false;
+
+        String nowTimeStr = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+
+        Date nowTime;
+        try {
+            nowTime = sdf.parse(nowTimeStr);
+        } catch (ParseException e) {
+            Log.e("VisibilityUpdate", "Error parsing current time: " + e.getMessage());
+            return;
+        }
+
+        // Map to quickly lookup start/end times by polygon ID
+        Map<Integer, String[]> visibilityTimes = new HashMap<>();
+
+        for (int i = 0; i < visibilityArray.length(); i++) {
+            JSONObject visibilityObject = visibilityArray.getJSONObject(i);
+            int visiblePolygonId = visibilityObject.getInt("polygon_id");
+            String startTimeStr = visibilityObject.getString("visibility_start_time").substring(0, 5);
+            String endTimeStr = visibilityObject.getString("visibility_end_time").substring(0, 5);
+
+            visibilityTimes.put(visiblePolygonId, new String[]{startTimeStr, endTimeStr});
+        }
+
+        for (int j = 0; j < polygonIds.size(); j++) {
+            int polygonId = polygonIds.get(j);
+            Polygon polygon = savedPolygons.get(j);
+            float waterLevel = polygonWaterLevels.get(j);
+            Marker marker = polygonMarkers.get(j);
+
+            if (visibilityTimes.containsKey(polygonId)) {
+                String[] times = visibilityTimes.get(polygonId);
+                String startTimeStr = times[0];
+                String endTimeStr = times[1];
+
+                Date startTime, endTime;
+                try {
+                    startTime = sdf.parse(startTimeStr);
+                    endTime = sdf.parse(endTimeStr);
+                } catch (ParseException e) {
+                    Log.e("VisibilityUpdate", "Error parsing visibility times: " + e.getMessage());
+                    continue;
+                }
+
+                if (nowTime.compareTo(startTime) >= 0 && nowTime.compareTo(endTime) <= 0) {
+                    int fillColor = getFillColorForWaterLevel(waterLevel);
+                    polygon.setFillColor(fillColor);
+                    anyPolygonVisible = true;
+
+                    Log.d("VisibilityUpdate", "✅ Polygon ID: " + polygonId + " visible between " + startTimeStr + " - " + endTimeStr);
+                }
+
+                marker.setOnMarkerClickListener((clickedMarker, clickedMapView) -> {
+                    showLiveInfoDialog(startTimeStr, endTimeStr, waterLevel, polygonId);
+                    return true;
+                });
+
+            } else {
+                // 🆕 No blockage today
+                marker.setOnMarkerClickListener((clickedMarker, clickedMapView) -> {
+                    showNoBlockageTodayDialog(polygonId);
+                    return true;
+                });
+            }
+        }
+
+        if (anyPolygonVisible) {
+            Log.d("VisibilityUpdate", "🎯 Some polygons were filled based on current time period.");
+        } else {
+            Log.d("VisibilityUpdate", "⚡ No polygons matched visibility at this time.");
+        }
+
+        mapView.invalidate();
+    }
+    private void showNoBlockageTodayDialog(int polygonId) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Polygon " + polygonId + " Info");
+
+        final TextView clockView = new TextView(this);
+        final TextView statusView = new TextView(this);
+
+        clockView.setPadding(20, 20, 20, 20);
+        statusView.setPadding(20, 20, 20, 20);
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.addView(clockView);
+        layout.addView(statusView);
+
+        builder.setView(layout);
+        builder.setPositiveButton("Close", (dialog, which) -> dialog.dismiss());
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        Handler handler = new Handler();
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                String currentTime = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
+                clockView.setText("⏰ Current Time: " + currentTime);
+
+                statusView.setText("😊 No water blockage today!");
+
+                handler.postDelayed(this, 1000);
+            }
+        };
+        handler.post(runnable);
+
+        dialog.setOnDismissListener(d -> handler.removeCallbacks(runnable));
+    }
+
+
+
+
+
 
     private Drawable resizeDrawable(int drawableId, int width, int height) {
         Drawable drawable = ContextCompat.getDrawable(this, drawableId);
@@ -725,14 +1152,20 @@ public class RoutingActivity extends AppCompatActivity {
 
     // Load saved polygons from CSV in assets folder
     private void loadPolygonsFromAssets() {
+        int coloredPolygonCount = 0;  // Initialize counter for colored polygons
+        int totalRowCount = 0;  // To count the total number of rows read
+        int skippedRowCount = 0; // To count the number of skipped rows due to errors
+
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(getAssets().open("route_data.csv")))) {
             String line;
             while ((line = reader.readLine()) != null) {
+                totalRowCount++;  // Increment total rows
+
                 if (!line.startsWith("Road Name")) { // Skip the header line
                     String[] values = line.split(",");
 
-                    // Ensure there are at least 9 elements in the row (Road Name + 8 coordinates)
-                    if (values.length >= 9) {
+                    // Ensure there are at least 12 elements in the row (including Road Name and 8 coordinates)
+                    if (values.length >= 12) {
                         try {
                             // Parse the latitudes and longitudes (we are ignoring the road name)
                             double lat1 = Double.parseDouble(values[1].trim());
@@ -744,23 +1177,30 @@ public class RoutingActivity extends AppCompatActivity {
                             double lat4 = Double.parseDouble(values[7].trim());
                             double lon4 = Double.parseDouble(values[8].trim());
 
+                            // Parse the water level as a float (since it may contain decimals like 2.0)
+                            float waterLevel = Float.parseFloat(values[11].trim());
+
+                            // Determine the polygon fill color based on the water level
+                            int fillColor = getFillColorForWaterLevel(waterLevel);
+
                             GeoPoint p1 = new GeoPoint(lat1, lon1);
                             GeoPoint p2 = new GeoPoint(lat2, lon2);
                             GeoPoint p3 = new GeoPoint(lat3, lon3);
                             GeoPoint p4 = new GeoPoint(lat4, lon4);
 
-                            // Create a polygon from the points
+                            // Create a list of points for the polygon
                             List<GeoPoint> points = new ArrayList<>();
                             points.add(p1);
                             points.add(p2);
                             points.add(p3);
                             points.add(p4);
 
+                            // Create the polygon
                             Polygon polygon = new Polygon();
                             polygon.setPoints(points);
-                            polygon.setFillColor(0x220000FF);  // Transparent blue
-                            polygon.setStrokeColor(0xFF0000FF); // Blue outline
-                            polygon.setStrokeWidth(2.5f);
+                            polygon.setFillColor(fillColor);  // Set the color based on the water level
+                            polygon.setStrokeColor(Color.BLACK); // Black outline
+                            polygon.setStrokeWidth(2.5f); // Default stroke width
 
                             // Add the polygon to the saved polygons list
                             savedPolygons.add(polygon);
@@ -768,14 +1208,63 @@ public class RoutingActivity extends AppCompatActivity {
                             // Add the polygon to the map
                             mapView.getOverlays().add(polygon);
 
-                            Log.d(TAG, "Loaded polygon from CSV: " + points);
+                            // Log polygon details (for all polygons)
+                            Log.d(TAG, "Polygon Loaded: Index = " + totalRowCount +
+                                    ", Points = [" + p1 + ", " + p2 + ", " + p3 + ", " + p4 + "]" +
+                                    ", Water Level = " + waterLevel +
+                                    ", Fill Color = " + fillColor +
+                                    ", Stroke Color = BLACK");
+
+                            // Add the click listener to the polygon to show the details in a dialog box
+                            final int index = totalRowCount - 1;  // Get the index of the polygon
+                            final String rainThreshold = values[9];  // Rain Threshold (mm)
+                            final String waterloggedDuration = values[10];  // Waterlogged Duration (hrs)
+                            final String waterLevelStr = values[11];  // Water Level
+
+                            polygon.setOnClickListener(new Polygon.OnClickListener() {
+                                @Override
+                                public boolean onClick(Polygon polygon, MapView mapView, GeoPoint eventPos) {
+                                    // Show the polygon's details in a dialog box
+                                    showPolygonDetailsDialog(index, rainThreshold, waterloggedDuration, waterLevelStr);
+                                    return true;
+                                }
+                            });
+
+                            // Add a marker at a specific location (e.g., center or any random point on the polygon)
+                            Marker marker = new Marker(mapView);
+                            marker.setPosition(p1); // Set the marker at the first point of the polygon
+                            marker.setTitle("Polygon " + totalRowCount); // Marker title
+
+                            // Add the marker to the map
+                            mapView.getOverlays().add(marker);
+
+                            // Add a click listener to the marker to show the polygon's details in the dialog box
+                            marker.setOnMarkerClickListener(new Marker.OnMarkerClickListener() {
+                                @Override
+                                public boolean onMarkerClick(Marker clickedMarker, MapView clickedMapView) {
+                                    showPolygonDetailsDialog(index, rainThreshold, waterloggedDuration, waterLevelStr);
+                                    return true;
+                                }
+                            });
 
                         } catch (NumberFormatException e) {
-                            Log.e(TAG, "Error parsing coordinates from CSV line: " + line, e);
+                            Log.e(TAG, "Error parsing coordinates or water level from CSV line: " + line, e);
+                            skippedRowCount++; // Increment skipped rows count
                         }
+                    } else {
+                        skippedRowCount++; // Increment skipped rows count for rows with insufficient columns
+                        Log.d(TAG, "Skipping row due to insufficient columns: " + line);
                     }
                 }
             }
+
+            // Log the total and skipped rows for debugging
+            Log.d(TAG, "Total rows processed: " + totalRowCount);
+            Log.d(TAG, "Total rows skipped: " + skippedRowCount);
+            Log.d(TAG, "Total number of colored polygons: " + coloredPolygonCount);
+
+            // Log the number of polygons created
+            Log.d(TAG, "Total polygons loaded: " + savedPolygons.size());
 
             // Refresh the map to show the polygons
             mapView.invalidate();
@@ -785,5 +1274,121 @@ public class RoutingActivity extends AppCompatActivity {
             Log.e("RoutingActivity", "Error reading CSV from assets", e);
         }
     }
+
+
+    // Method to show the polygon details in a dialog box
+//    private void showPolygonDetailsDialog(int index, String rainThreshold, String waterloggedDuration, String waterLevel) {
+//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//        builder.setTitle("Polygon Details");
+//
+//        // Set the dialog message with the polygon's details
+//        builder.setMessage("Index: " + index + "\n" +
+//                "Rain Threshold (mm): " + rainThreshold + "\n" +
+//                "Waterlogged Duration (hrs): " + waterloggedDuration + "\n" +
+//                "Water Level: " + waterLevel);
+//
+//        // Add a button to close the dialog
+//        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+//
+//        // Show the dialog
+//        builder.show();
+//    }
+
+
+
+
+
+    private void showPolygonDetailsDialog(int index, String rainThreshold, String waterloggedDuration, String waterLevel) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Polygon Details");
+
+        // Set the dialog message with the polygon's details
+        builder.setMessage("Index: " + index + "\n" +
+                "Rain Threshold (mm): " + rainThreshold + "\n" +
+                "Waterlogged Duration (mins): " + waterloggedDuration + "\n" +
+                "Water Level: " + waterLevel);
+
+        // Add a button to close the dialog
+        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+
+        // Show the dialog
+        builder.show();
+    }
+
+
+
+
+
+
+
+
+    // Method to map water level to colors
+    // Method to map water level to transparent colors
+    private int getFillColorForWaterLevel(float waterLevel) {
+        switch ((int) waterLevel) {
+            case 1:
+                return Color.argb(150, 255, 255, 0); // Transparent Yellow
+            case 2:
+                return Color.argb(150, 0, 0, 255);   // Transparent Blue
+            case 3:
+                return Color.argb(150, 255, 0, 0);   // Transparent Red
+            case 4:
+                return Color.argb(150, 139, 69, 19); // Transparent Brown
+            // You can add more cases if needed, for other water levels
+        }
+
+        // If the water level is not 1, 2, 3, or 4, the polygon won't be drawn
+        // You can add logging or error handling if needed.
+        return -1;  // Invalid color
+    }
+
+
+
+
+
+
+
+    // Method to show the polygon details in a dialog box
+//    private void showPolygonDetailsDialog(int index, String rainThreshold, String waterloggedDuration, String waterLevel) {
+//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//        builder.setTitle("Polygon Details");
+//
+//        // Set the dialog message with the polygon's details
+//        builder.setMessage("Index: " + index + "\n" +
+//                "Rain Threshold (mm): " + rainThreshold + "\n" +
+//                "Waterlogged Duration (hrs): " + waterloggedDuration + "\n" +
+//                "Water Level: " + waterLevel);
+//
+//        // Add a button to close the dialog
+//        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+//
+//        // Show the dialog
+//        builder.show();
+//    }
+
+    // Helper method to get the fill color based on the water level
+//    private int getFillColorForWaterLevel(float waterLevel) {
+//        // Convert water level to an integer for easier comparison, if needed
+//        int level = (int) waterLevel;  // Casting the float to int for comparison
+//
+//        switch (level) {
+//            case 1:
+//                return Color.argb(150, 0, 255, 0); // Green transparent
+//            case 2:
+//                return Color.argb(150, 0, 0, 255); // Blue transparent (same as before)
+//            case 3:
+//                return Color.argb(150, 255, 0, 0); // Red transparent
+//            case 4:
+//                return Color.argb(150, 139, 69, 19); // Brown transparent
+//            default:
+//                return Color.argb(150, 0, 0, 255); // Default to blue transparent if invalid value
+//        }
+//    }
+
+
+
+
+
+
 
 }
