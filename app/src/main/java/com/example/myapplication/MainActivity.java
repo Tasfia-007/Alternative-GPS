@@ -44,6 +44,7 @@ import com.example.myapplication.AlertActivity;
 import com.google.android.material.navigation.NavigationView;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
@@ -58,10 +59,15 @@ import org.osmdroid.views.overlay.Polyline;
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -78,6 +84,17 @@ public class MainActivity extends AppCompatActivity {
     private SearchView searchView;
     private static final int SPEECH_REQUEST_CODE = 100;
     private static final int AUDIO_PERMISSION_REQUEST = 2;
+    private static final OkHttpClient client = new OkHttpClient();
+
+    JSONArray weatherData = fetchHourlyWeatherData();
+
+
+    private static final String API_KEY = "PV5RTCQMTHUNRL9MCH9DKDQ32";
+
+    private static final String SUPABASE_URL = "https://kquvuygavkhsxvdpqyfn.supabase.co"; // Replace with your Supabase URL
+    private static final String SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdXZ1eWdhdmtoc3h2ZHBxeWZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzcxMDQ4NjcsImV4cCI6MjA1MjY4MDg2N30.YVPKExfM-ZxzO9JvM9RQZQrBiyG1iT50fiwGUcvw8EI";
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -215,10 +232,13 @@ public class MainActivity extends AppCompatActivity {
                     return true;
 
 
-            } else if (itemId == R.id.settings) {
-                    Toast.makeText(this, "Settings clicked", Toast.LENGTH_SHORT).show();
+            } else if (itemId == R.id.water) {
+                    Intent intent = new Intent(MainActivity.this, LogAreaActivity.class);
+                    startActivity(intent);
                     return true;
-                } else if (itemId == R.id.help) {
+                }
+
+             else if (itemId == R.id.help) {
                     Toast.makeText(this, "Help clicked", Toast.LENGTH_SHORT).show();
                     return true;
                 }
@@ -230,16 +250,293 @@ public class MainActivity extends AppCompatActivity {
 
 //for map location
 
+        checkAndCleanupPreviousDay();
 
 
 
+        getCurrentLocation();
 
-        setupMapTouchListener();
+        new Thread(() -> { // ⚡ run in background thread (important for network)
+            JSONArray weatherData = fetchHourlyWeatherData();
 
-
+            if (weatherData.length() > 0) {
+                for (int polygonId = 193; polygonId <= 382; polygonId++) {
+                    processPolygonVisibility(polygonId, weatherData);
+                }
+            } else {
+                Log.e("WeatherActivity", "No hourly weather data fetched.");
+            }
+        }).start();
 
 
     }
+
+
+
+
+
+
+
+
+
+
+    private void getCurrentLocation() {
+        // Fixed coordinates for Dhaka
+        double lat = 23.8103;  // Latitude for Dhaka
+        double lon = 90.4125;  // Longitude for Dhaka
+
+        // Fetch weather data based on the fixed location (Dhaka)
+        fetchWeatherData(lat, lon);  // No need for location permissions now
+    }
+
+
+    private void fetchWeatherData(double lat, double lon) {
+        String url = String.format(Locale.US,
+                "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/%f,%f?key=%s&contentType=json&unitGroup=metric",
+                lat, lon, API_KEY);
+
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder().url(url).build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "API Failure: " + e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    Log.e(TAG, "API Response Error: " + response.code());
+                    return;
+                }
+
+                try {
+                    String responseString = response.body().string();
+                    JSONObject jsonResponse = new JSONObject(responseString);
+
+                    // Parse weather data and save it to the database
+                    runOnUiThread(() -> {
+                        try {
+                            saveWeatherDataToDatabase(jsonResponse);
+                        } catch (JSONException e) {
+                            Log.e(TAG, "JSON Parsing Error: " + e.getMessage());
+                        }
+                    });
+
+                } catch (JSONException e) {
+                    Log.e(TAG, "Error parsing JSON response: " + e.getMessage());
+                }
+            }
+        });
+    }
+
+    private void saveWeatherDataToDatabase(JSONObject jsonResponse) throws JSONException {
+        // Get the current date in yyyy-MM-dd format
+        String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        JSONArray hourlyArray = jsonResponse.getJSONArray("days").getJSONObject(0).getJSONArray("hours");
+
+        // Save hourly forecast data
+        for (int i = 0; i < hourlyArray.length(); i++) {
+            JSONObject hour = hourlyArray.getJSONObject(i);
+
+            // Prepare data to insert into Supabase
+            JSONObject dataToInsert = new JSONObject();
+            dataToInsert.put("date", todayDate);
+            // Format time as HH:00:00 for daily_forecast
+            String time = hour.getString("datetime").substring(0, 2) + ":00:00"; // Format as "HH:00:00"
+            dataToInsert.put("time", time); // Insert formatted time into the "time" column
+            dataToInsert.put("temperature", hour.getDouble("temp"));
+            dataToInsert.put("feelslike", hour.getDouble("feelslike"));
+            dataToInsert.put("windspeed", hour.getDouble("windspeed"));
+            dataToInsert.put("precipitation", hour.getDouble("precip"));
+            dataToInsert.put("condition", hour.getString("conditions"));
+            dataToInsert.put("rainchance", hour.getDouble("precipprob"));
+
+            Log.d(TAG, "Uploading hourly forecast data: " + dataToInsert.toString());
+            insertIntoSupabase("daily_forecast", dataToInsert);  // Corrected table and column
+        }
+
+        // Save summary data (e.g., total precipitation)
+        saveTodaySummaryIntoSupabase(jsonResponse, hourlyArray);
+    }
+
+
+    private void saveTodaySummaryIntoSupabase(JSONObject json, JSONArray hourly) {
+        try {
+            String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+            double cumulativePrecip = 0.0; // Initialize cumulative precipitation
+
+            // Fetch yesterday's 23rd hour precipitation (if it exists)
+            double yesterday23Precip = getYesterdayHour23Precipitation();
+            cumulativePrecip += yesterday23Precip; // Add yesterday's precipitation to cumulative
+
+            for (int i = 0; i < hourly.length(); i++) {
+                JSONObject hour = hourly.getJSONObject(i);
+
+                // Extract the hour (e.g., "14:00:00" -> 14)
+                int timeHour = Integer.parseInt(hour.getString("datetime").substring(0, 2));
+
+                // Get precipitation for this hour
+                double precip = hour.getDouble("precip");
+
+                // Special case: If time_hour = 0 and cumulativePrecip is adjusted
+                if (timeHour == 0 && precip > 0 && yesterday23Precip > 0) {
+                    // Add yesterday's 23-hour precip to today's 0-hour precip
+                    cumulativePrecip += yesterday23Precip;
+                } else {
+                    // Update cumulative precipitation as usual
+                    if (precip > 0) {
+                        cumulativePrecip += precip;
+                    } else {
+                        cumulativePrecip = 0.0;  // Reset cumulative precipitation if no precipitation
+                    }
+                }
+
+                // Prepare summary data to insert
+                JSONObject summaryData = new JSONObject();
+                summaryData.put("date", todayDate);
+                summaryData.put("time_hour", timeHour);  // Use time_hour for the hour value
+                summaryData.put("prec", precip);
+                summaryData.put("total_precipitation", cumulativePrecip); // Adjusted total precipitation
+
+                Log.d(TAG, "Uploading summary data for hour " + timeHour + ": " + summaryData.toString());
+
+                // Insert the data into Supabase
+                insertIntoSupabase("current_day_summary", summaryData);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error saving summary data: " + e.getMessage());
+        }
+    }
+
+
+
+    private void insertIntoSupabase(String tableName, JSONObject dataObject) {
+        OkHttpClient client = new OkHttpClient();
+
+        String url = SUPABASE_URL + "/rest/v1/" + tableName + "?on_conflict=date,time_hour";  // Change "time" to "time_hour"
+        Request request = new Request.Builder()
+                .url(url)
+                .addHeader("apikey", SUPABASE_KEY)
+                .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Prefer", "resolution=merge-duplicates") // So if exists -> update instead of error
+                .post(okhttp3.RequestBody.create(dataObject.toString(), okhttp3.MediaType.parse("application/json")))
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Error inserting data into Supabase: " + e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Successfully inserted data into Supabase");
+                } else {
+                    String errorBody = response.body() != null ? response.body().string() : "Unknown error";
+                    Log.e(TAG, "Supabase insert failed: " + response.code() + " | " + errorBody);
+                }
+            }
+        });
+    }
+
+
+    private double getYesterdayHour23Precipitation() {
+        try {
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.DATE, -1); // Move one day back
+            String yesterdayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.getTime());
+
+            // Construct the URL to fetch yesterday's time_hour = 23 precipitation
+            String url = SUPABASE_URL + "/rest/v1/current_day_summary"
+                    + "?select=total_precipitation"
+                    + "&date=eq." + yesterdayDate
+                    + "&time_hour=eq.23"; // Get only time_hour = 23 data for the previous day
+
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", SUPABASE_KEY)
+                    .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
+                    .addHeader("Accept", "application/json")
+                    .build();
+
+            Response response = client.newCall(request).execute();
+            if (response.isSuccessful()) {
+                String body = response.body().string();
+                JSONArray array = new JSONArray(body);
+
+                if (array.length() > 0) {
+                    JSONObject obj = array.getJSONObject(0);
+                    double precip = obj.getDouble("total_precipitation");
+                    Log.d("FetchYesterday23", "✅ Yesterday 23h total_precip: " + precip);
+                    return precip;  // Return yesterday's precipitation for time_hour = 23
+                } else {
+                    Log.d("FetchYesterday23", "⚡ No data found for yesterday's time_hour 23.");
+                }
+            } else {
+                Log.e("FetchYesterday23", "❌ Failed to fetch yesterday's data: " + response.code());
+            }
+        } catch (Exception e) {
+            Log.e("FetchYesterday23", "❌ Exception: " + e.getMessage());
+        }
+        return 0.0;  // Return 0 if no data found or an error occurs
+    }
+
+    private boolean cleanupDoneToday = false; // Add this as a class-level variable
+
+    private void checkAndCleanupPreviousDay() {
+        if (cleanupDoneToday) return;
+
+        // Get yesterday's date
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DATE, -1); // Move one day back
+        String yesterdayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.getTime());
+
+        // Construct the SQL query to delete data except for yesterday's time_hour = 23
+        String deleteUrl = SUPABASE_URL + "/rest/v1/current_day_summary"
+                + "?date=eq." + yesterdayDate
+                + "&time_hour=lt.23"; // Delete everything except time_hour = 23
+
+        OkHttpClient client = new OkHttpClient();
+        Request deleteRequest = new Request.Builder()
+                .url(deleteUrl)
+                .addHeader("apikey", SUPABASE_KEY)
+                .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
+                .delete() // Delete the data
+                .build();
+
+        // Execute the delete request
+        client.newCall(deleteRequest).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Failed to delete old data: " + e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "✅ Successfully deleted old data for previous day except for time_hour 23.");
+                    cleanupDoneToday = true;
+                } else {
+                    Log.e(TAG, "❌ Error deleting old data: " + response.code());
+                }
+            }
+        });
+    }
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -878,8 +1175,235 @@ public class MainActivity extends AppCompatActivity {
 
 
     // Fetch and show location name on touch
+    private JSONArray fetchHourlyWeatherData() {
+        try {
+            String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+            String url = SUPABASE_URL + "/rest/v1/current_day_summary?select=time_hour,total_precipitation&date=eq." + todayDate + "&order=time_hour.asc";
+
+            Request request = new Request.Builder()
+                    .url(url)
+                    .addHeader("apikey", SUPABASE_KEY)
+                    .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
+                    .addHeader("Accept", "application/json")
+                    .build();
+
+            Response response = client.newCall(request).execute();
+            if (response.isSuccessful()) {
+                String responseBody = response.body().string();
+                Log.d("FetchHourlyWeather", "✅ Fetched weather data successfully (sorted by time_hour)");
+                return new JSONArray(responseBody);
+            } else {
+                Log.e("FetchHourlyWeather", "❌ Fetch failed! Status: " + response.code());
+            }
+        } catch (Exception e) {
+            Log.e("FetchHourlyWeather", "❌ Exception: " + e.getMessage());
+        }
+        return new JSONArray();
+    }
 
 
+    private double getRainThresholdForPolygon(int polygonId) {
+        if (polygonId >= 193 && polygonId <= 194) return 5;
+        if (polygonId >= 195 && polygonId <= 199) return 6;
+        if (polygonId == 200) return 7;
+        if (polygonId >= 201 && polygonId <= 227) return 8;
+        if (polygonId >= 228 && polygonId <= 269) return 10;
+        if (polygonId >= 270 && polygonId <= 304) return 12;
+        if (polygonId >= 305 && polygonId <= 339) return 15;
+        if (polygonId >= 340 && polygonId <= 356) return 18;
+        if (polygonId >= 357 && polygonId <= 378) return 20;
+        if (polygonId >= 379 && polygonId <= 380) return 22;
+        if (polygonId == 381) return 25;
+        if (polygonId == 382) return 26;
+        if (polygonId == 338) return 28;
+        return Double.MAX_VALUE; // Default high value to never trigger
+    }
 
+    private double getReducePerMin(int polygonId) {
+        return 5.0; // Example: fixed reduction rate
+    }
+
+    private void processPolygonVisibility(int polygonId, JSONArray weatherData) {
+        double rainThreshold = getRainThresholdForPolygon(polygonId);
+        double reducePerMin = getReducePerMin(polygonId);
+
+        boolean visibilityStarted = false;
+        int visibilityStartHour = -1;
+        double waterAmount = 0;
+        int lastNonZeroHour = -1;
+
+        Log.d("PolygonProcessing", "▶️ Starting processing for polygonId = " + polygonId);
+
+        for (int i = 0; i < weatherData.length(); i++) {
+            try {
+                JSONObject hourData = weatherData.getJSONObject(i);
+                int timeHour = hourData.getInt("time_hour");
+                double totalPrecip = hourData.getDouble("total_precipitation");
+
+                if (!visibilityStarted && totalPrecip >= rainThreshold) {
+                    visibilityStarted = true;
+                    visibilityStartHour = timeHour;
+                    waterAmount = totalPrecip;
+                    lastNonZeroHour = timeHour;
+                    Log.d("VisibilityStart", "🌧️ Visibility started for polygonId=" + polygonId + " at " + formatTime(visibilityStartHour));
+                } else if (visibilityStarted) {
+                    if (totalPrecip > 0) {
+                        int minutesPassed = (timeHour - lastNonZeroHour) * 60;
+                        double reducedWater = minutesPassed / reducePerMin;
+                        waterAmount = Math.max(waterAmount - reducedWater, 0);
+                        waterAmount += totalPrecip;
+                        lastNonZeroHour = timeHour;
+                        Log.d("VisibilityUpdate", "➕ New rain added at " + formatTime(timeHour) + ", updated waterAmount=" + waterAmount);
+                    } else if (totalPrecip == 0) {
+                        int minutesPassed = (timeHour - lastNonZeroHour) * 60;
+                        double reducedWater = minutesPassed / reducePerMin;
+                        waterAmount = Math.max(waterAmount - reducedWater, 0);
+
+                        if (waterAmount <= 0) {
+                            insertPolygonVisibilityIntoDatabase(polygonId, visibilityStartHour, timeHour);
+
+                            // Reset
+                            visibilityStarted = false;
+                            visibilityStartHour = -1;
+                            waterAmount = 0;
+                            lastNonZeroHour = -1;
+
+                            Log.d("VisibilityEnd", "✅ Water drained completely. Visibility recorded for polygonId=" + polygonId +
+                                    " from " + formatTime(visibilityStartHour) + " to " + formatTime(timeHour));
+                        }
+                    }
+                }
+            } catch (JSONException e) {
+                Log.e("PolygonProcessing", "❌ Error parsing weather data: " + e.getMessage());
+            }
+        }
+
+        if (visibilityStarted && waterAmount > 0) {
+            double finalHour = 23.0;
+            double minutesLeft = waterAmount * reducePerMin;
+            double visibilityEndHour = finalHour + (minutesLeft / 60.0);
+
+            insertPolygonVisibilityIntoDatabase(polygonId, visibilityStartHour, visibilityEndHour);
+
+            Log.d("VisibilityEndFinal", "✅ End of day processing: PolygonId=" + polygonId +
+                    " Visibility from " + formatTime(visibilityStartHour) + " to " + convertHourToTimeFormat(visibilityEndHour));
+        }
+
+        Log.d("PolygonProcessing", "🏁 Done processing polygonId=" + polygonId);
+    }
+
+    private void insertPolygonVisibilityIntoDatabase(int polygonId, double startHour, double endHour) {
+        OkHttpClient client = new OkHttpClient();
+
+        String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        String startTimeStr = convertHourToTimeFormat(startHour);
+        String endTimeStr = convertHourToTimeFormat(endHour);
+
+        // Step 1: Check if already exists
+        String checkUrl = SUPABASE_URL + "/rest/v1/polygon_visibility"
+                + "?polygon_id=eq." + polygonId
+                + "&visibility_start_time=eq." + startTimeStr
+                + "&visibility_end_time=eq." + endTimeStr
+                + "&date=eq." + todayDate;
+
+        Request checkRequest = new Request.Builder()
+                .url(checkUrl)
+                .addHeader("apikey", SUPABASE_KEY)
+                .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
+                .addHeader("Accept", "application/json")
+                .build();
+
+        client.newCall(checkRequest).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e("InsertVisibilityCheck", "❌ Check failed: " + e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String responseBody = response.body().string();
+                    JSONArray existingRecords;
+                    try {
+                        existingRecords = new JSONArray(responseBody);
+                        if (existingRecords.length() > 0) {
+                            // Already exists
+                            Log.d("InsertVisibilityCheck", "⚡ Already exists! Skipping polygonId=" + polygonId);
+                        } else {
+                            // Step 2: Not found, Insert it
+                            JSONObject dataToInsert = new JSONObject();
+                            try {
+                                dataToInsert.put("polygon_id", polygonId);
+                                dataToInsert.put("visibility_start_time", startTimeStr);
+                                dataToInsert.put("visibility_end_time", endTimeStr);
+                                dataToInsert.put("rain_threshold_mm", getRainThresholdForPolygon(polygonId));
+                                dataToInsert.put("waterlogged_duration_minutes", (int)((endHour - startHour) * 60));
+                                dataToInsert.put("is_visible", true);
+                                dataToInsert.put("date", todayDate); // Make sure your DB has this field
+                            } catch (JSONException e) {
+                                Log.e("InsertVisibility", "❌ JSON creation failed: " + e.getMessage());
+                                return;
+                            }
+
+                            String insertUrl = SUPABASE_URL + "/rest/v1/polygon_visibility";
+                            Request insertRequest = new Request.Builder()
+                                    .url(insertUrl)
+                                    .addHeader("apikey", SUPABASE_KEY)
+                                    .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
+                                    .addHeader("Content-Type", "application/json")
+                                    .post(okhttp3.RequestBody.create(dataToInsert.toString(), okhttp3.MediaType.parse("application/json")))
+                                    .build();
+
+                            client.newCall(insertRequest).enqueue(new Callback() {
+                                @Override
+                                public void onFailure(Call call, IOException e) {
+                                    Log.e("InsertVisibility", "❌ Failed inserting visibility: " + e.getMessage());
+                                }
+
+                                @Override
+                                public void onResponse(Call call, Response response) throws IOException {
+                                    if (response.isSuccessful()) {
+                                        Log.d("InsertVisibility", "✅ Successfully inserted polygonId = " + polygonId);
+                                    } else {
+                                        String errorBody = response.body() != null ? response.body().string() : "Unknown error";
+                                        Log.e("InsertVisibility", "❌ Insert failed! Status=" + response.code() + " Body=" + errorBody);
+                                    }
+                                }
+                            });
+                        }
+                    } catch (JSONException e) {
+                        Log.e("InsertVisibilityCheck", "❌ JSON parse failed: " + e.getMessage());
+                    }
+                } else {
+                    Log.e("InsertVisibilityCheck", "❌ Check failed! Status=" + response.code());
+                }
+            }
+        });
+    }
+
+
+    private String formatTime(int hour) {
+        return String.format(Locale.getDefault(), "%02d:00", hour);
+    }
+
+    private String addMinutesToTime(int startHour, double minutesToAdd) {
+        int startMinutes = startHour * 60;
+        int totalMinutes = (int) (startMinutes + minutesToAdd);
+        int endHour = totalMinutes / 60;
+        int endMinute = totalMinutes % 60;
+        return String.format(Locale.getDefault(), "%02d:%02d", endHour, endMinute);
+    }
+
+    private String convertHourToTimeFormat(double hour) {
+        int hourPart = (int) hour;
+        int minutePart = (int) Math.round((hour - hourPart) * 60);
+
+        if (minutePart == 60) {
+            hourPart += 1;
+            minutePart = 0;
+        }
+
+        return String.format(Locale.getDefault(), "%02d:%02d:00", hourPart, minutePart);
+    }
 
 }
