@@ -343,9 +343,14 @@ public class MainActivity extends AppCompatActivity {
             // Prepare data to insert into Supabase
             JSONObject dataToInsert = new JSONObject();
             dataToInsert.put("date", todayDate);
-            // Format time as HH:00:00 for daily_forecast
-            String time = hour.getString("datetime").substring(0, 2) + ":00:00"; // Format as "HH:00:00"
-            dataToInsert.put("time", time); // Insert formatted time into the "time" column
+
+            // ✅ Fix: Format time correctly for TIME column
+            String rawTime = hour.getString("datetime");  // Example: "09:00" or "21:00"
+            String[] parts = rawTime.split(":");
+            String formattedTime = String.format("%02d:00:00", Integer.parseInt(parts[0]));
+            dataToInsert.put("time", formattedTime); // Insert formatted time into the "time" column
+
+            // ✅ Populate remaining fields as per schema
             dataToInsert.put("temperature", hour.getDouble("temp"));
             dataToInsert.put("feelslike", hour.getDouble("feelslike"));
             dataToInsert.put("windspeed", hour.getDouble("windspeed"));
@@ -354,7 +359,9 @@ public class MainActivity extends AppCompatActivity {
             dataToInsert.put("rainchance", hour.getDouble("precipprob"));
 
             Log.d(TAG, "Uploading hourly forecast data: " + dataToInsert.toString());
-            insertIntoSupabase("daily_forecast", dataToInsert);  // Corrected table and column
+
+            // ✅ Insert into daily_forecast table
+            insertIntoSupabase("daily_forecast", dataToInsert);
         }
 
         // Save summary data (e.g., total precipitation)
@@ -415,13 +422,24 @@ public class MainActivity extends AppCompatActivity {
     private void insertIntoSupabase(String tableName, JSONObject dataObject) {
         OkHttpClient client = new OkHttpClient();
 
-        String url = SUPABASE_URL + "/rest/v1/" + tableName + "?on_conflict=date,time_hour";  // Change "time" to "time_hour"
+        // ✅ Use correct on_conflict clause for each table
+        String conflictClause = "";
+        if (tableName.equals("daily_forecast")) {
+            conflictClause = "?on_conflict=date,time";
+        } else if (tableName.equals("current_day_summary")) {
+            conflictClause = "?on_conflict=date,time_hour";
+        } else if (tableName.equals("polygon_visibility")) {
+            conflictClause = "?on_conflict=date,polygon_id,visibility_start_time,visibility_end_time";
+        }
+
+        String url = SUPABASE_URL + "/rest/v1/" + tableName + conflictClause;
+
         Request request = new Request.Builder()
                 .url(url)
                 .addHeader("apikey", SUPABASE_KEY)
                 .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
                 .addHeader("Content-Type", "application/json")
-                .addHeader("Prefer", "resolution=merge-duplicates") // So if exists -> update instead of error
+                .addHeader("Prefer", "resolution=merge-duplicates")
                 .post(okhttp3.RequestBody.create(dataObject.toString(), okhttp3.MediaType.parse("application/json")))
                 .build();
 
@@ -434,10 +452,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
-                    Log.d(TAG, "Successfully inserted data into Supabase");
+                    Log.d(TAG, "Successfully inserted into " + tableName);
                 } else {
                     String errorBody = response.body() != null ? response.body().string() : "Unknown error";
-                    Log.e(TAG, "Supabase insert failed: " + response.code() + " | " + errorBody);
+                    Log.e(TAG, "Insert failed for " + tableName + ": " + response.code() + " | " + errorBody);
                 }
             }
         });
