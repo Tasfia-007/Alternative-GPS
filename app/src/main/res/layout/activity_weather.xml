@@ -197,7 +197,16 @@
 
 
         <!-- Hourly Description -->
-
+        <TextView
+            android:id="@+id/hourly_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Hourly Summary Loading..."
+            android:textSize="16sp"
+            android:textColor="#000000"
+            android:padding="10dp"
+            android:layout_marginTop="10dp"
+            android:background="#E8F5E9" />
 
         <!-- Divider -->
         <View
@@ -237,7 +246,17 @@
         </HorizontalScrollView>
 
 
-
+        <!-- Upcoming Description -->
+        <TextView
+            android:id="@+id/upcoming_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Upcoming Summary Loading..."
+            android:textSize="16sp"
+            android:textColor="#000000"
+            android:padding="10dp"
+            android:layout_marginTop="10dp"
+            android:background="#FFF3E0" />
 
 
         <!-- Log View -->

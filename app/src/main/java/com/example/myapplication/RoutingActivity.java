@@ -24,6 +24,14 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import com.example.myapplication.R;
+import android.content.pm.PackageManager;
+import androidx.core.app.ActivityCompat;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
+import android.location.Location;
+
 import org.json.JSONException;
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
@@ -61,17 +69,31 @@ public class RoutingActivity extends AppCompatActivity {
     private EditText fromLocation;
     private EditText toLocation;
     private Button getRouteButton;
+    private View routeInfoContainer; // Class-level field
+    private TextView bestRouteTime; // Class-level field
+    private TextView alternativeRoutes; // Class-level field
     private MapView mapView;
+    private FusedLocationProviderClient fusedLocationClient;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
+    private GeoPoint currentLocation;
+    private String[] selectedMode = {"driving"}; // Default to driving
 
     private List<Polygon> savedPolygons = new ArrayList<>(); // List to store saved polygons
 
-    private static final String TAG = "RoutingActivity";
+    private static final String TAG = "RoutingActivity"; // For logging
     private static final String SUPABASE_URL = "https://kquvuygavkhsxvdpqyfn.supabase.co"; // Replace with your Supabase URL
     private static final String SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdXZ1eWdhdmtoc3h2ZHBxeWZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzcxMDQ4NjcsImV4cCI6MjA1MjY4MDg2N30.YVPKExfM-ZxzO9JvM9RQZQrBiyG1iT50fiwGUcvw8EI";
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_routing);
+        // Initialize FusedLocationProviderClient
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+// Check location permissions and get current location
+        checkLocationPermissions();
+
 
         // Initialize Views
         fromLocation = findViewById(R.id.from_location);
@@ -91,25 +113,48 @@ public class RoutingActivity extends AppCompatActivity {
         Log.d(TAG, "Map initialized successfully.");
 
         // Load polygons from CSV in assets folder
-//        loadPolygonsFromAssets();
-        //from database :)
         loadPolygonsFromDatabase();
-
 
         // Default mode is "driving"
         final String[] selectedMode = {"driving"};
 
-        // Listen for Spinner selection
         travelModeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                selectedMode[0] = parentView.getItemAtPosition(position).toString().toLowerCase(); // Update mode
-                Log.d(TAG, "Selected travel mode: " + selectedMode[0]);
+                String newMode = parentView.getItemAtPosition(position).toString().toLowerCase();
+                Log.d(TAG, "Selected travel mode: " + newMode);
+
+                if (!newMode.equals(selectedMode[0])) {
+                    selectedMode[0] = newMode;
+                    String from = fromLocation.getText().toString().trim();
+                    String to = toLocation.getText().toString().trim();
+                    if (!from.isEmpty() && !to.isEmpty()) {
+                        if (from.equals("Your Location") && fromLocation.getTag() instanceof GeoPoint) {
+                            GeoPoint fromPoint = (GeoPoint) fromLocation.getTag();
+                            boolean isToCoordinates = to.matches("-?\\d+\\.\\d+,-?\\d+\\.\\d+");
+                            if (isToCoordinates) {
+                                try {
+                                    String[] toLatLon = to.split(",");
+                                    double toLat = Double.parseDouble(toLatLon[0].trim());
+                                    double toLon = Double.parseDouble(toLatLon[1].trim());
+                                    GeoPoint toPoint = new GeoPoint(toLat, toLon);
+                                    fetchRoute(fromPoint, toPoint, selectedMode[0]);
+                                } catch (Exception e) {
+                                    Toast.makeText(RoutingActivity.this, "Invalid 'to' coordinates", Toast.LENGTH_SHORT).show();
+                                }
+                            } else {
+                                fetchCoordinatesAndDisplayRoute(from, to, selectedMode[0]);
+                            }
+                        } else {
+                            fetchCoordinatesAndDisplayRoute(from, to, selectedMode[0]);
+                        }
+                    }
+                }
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parentView) {
-                selectedMode[0] = "driving"; // Default to driving
+                selectedMode[0] = "driving";
                 Log.d(TAG, "No travel mode selected, defaulting to 'driving'.");
             }
         });
@@ -124,48 +169,133 @@ public class RoutingActivity extends AppCompatActivity {
                 return;
             }
 
-            // Check if "from" and "to" are in lat,lon format (e.g., "23.8103,90.4125")
-            boolean isFromCoordinates = from.matches("-?\\d+\\.\\d+,-?\\d+\\.\\d+");
-            boolean isToCoordinates = to.matches("-?\\d+\\.\\d+,-?\\d+\\.\\d+");
+            if (from.equals("Your Location") && fromLocation.getTag() instanceof GeoPoint) {
+                GeoPoint fromPoint = (GeoPoint) fromLocation.getTag();
+                Log.d(TAG, "Using 'Your Location' with coordinates: " + fromPoint);
 
-            if (isFromCoordinates && isToCoordinates) {
-                try {
-                    // Parse "from" coordinates
-                    String[] fromLatLon = from.split(",");
-                    double fromLat = Double.parseDouble(fromLatLon[0].trim());
-                    double fromLon = Double.parseDouble(fromLatLon[1].trim());
-                    GeoPoint fromPoint = new GeoPoint(fromLat, fromLon);
-
-                    // Parse "to" coordinates
-                    String[] toLatLon = to.split(",");
-                    double toLat = Double.parseDouble(toLatLon[0].trim());
-                    double toLon = Double.parseDouble(toLatLon[1].trim());
-                    GeoPoint toPoint = new GeoPoint(toLat, toLon);
-
-                    Log.d(TAG, "Parsed coordinates: From - " + fromPoint + ", To - " + toPoint);
-                    fetchRoute(fromPoint, toPoint, selectedMode[0]); // Directly fetch the route
-                } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
-                    Log.e(TAG, "Error parsing coordinates: " + e.getMessage());
-                    Toast.makeText(this, "Invalid coordinates format. Use: lat,lon (e.g., 23.8103,90.4125)", Toast.LENGTH_SHORT).show();
+                boolean isToCoordinates = to.matches("-?\\d+\\.\\d+,-?\\d+\\.\\d+");
+                if (isToCoordinates) {
+                    try {
+                        String[] toLatLon = to.split(",");
+                        double toLat = Double.parseDouble(toLatLon[0].trim());
+                        double toLon = Double.parseDouble(toLatLon[1].trim());
+                        GeoPoint toPoint = new GeoPoint(toLat, toLon);
+                        Log.d(TAG, "Parsed 'to' coordinates: " + toPoint);
+                        fetchRoute(fromPoint, toPoint, selectedMode[0]);
+                    } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+                        Log.e(TAG, "Error parsing 'to' coordinates: " + e.getMessage());
+                        Toast.makeText(this, "Invalid coordinates format. Use: lat,lon", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    new Thread(() -> {
+                        try {
+                            GeoPoint toPoint = geocodeLocation(to);
+                            if (toPoint != null) {
+                                runOnUiThread(() -> {
+                                    Log.d(TAG, "Geocoded 'to' to: " + toPoint);
+                                    fetchRoute(fromPoint, toPoint, selectedMode[0]);
+                                });
+                            } else {
+                                runOnUiThread(() -> Toast.makeText(this, "Failed to fetch 'to' coordinates.", Toast.LENGTH_SHORT).show());
+                            }
+                        } catch (Exception e) {
+                            runOnUiThread(() -> Toast.makeText(this, "Error geocoding 'to': " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                        }
+                    }).start();
                 }
             } else {
-                // If not coordinates, use the existing geocoding method
-                Log.d(TAG, "Fetching route from: " + from + " to: " + to);
-                fetchCoordinatesAndDisplayRoute(from, to, selectedMode[0]);
+                boolean isFromCoordinates = from.matches("-?\\d+\\.\\d+,-?\\d+\\.\\d+");
+                boolean isToCoordinates = to.matches("-?\\d+\\.\\d+,-?\\d+\\.\\d+");
+
+                if (isFromCoordinates && isToCoordinates) {
+                    try {
+                        String[] fromLatLon = from.split(",");
+                        double fromLat = Double.parseDouble(fromLatLon[0].trim());
+                        double fromLon = Double.parseDouble(fromLatLon[1].trim());
+                        GeoPoint fromPoint = new GeoPoint(fromLat, fromLon);
+
+                        String[] toLatLon = to.split(",");
+                        double toLat = Double.parseDouble(toLatLon[0].trim());
+                        double toLon = Double.parseDouble(toLatLon[1].trim());
+                        GeoPoint toPoint = new GeoPoint(toLat, toLon);
+
+                        Log.d(TAG, "Parsed coordinates: From - " + fromPoint + ", To - " + toPoint);
+                        fetchRoute(fromPoint, toPoint, selectedMode[0]);
+                    } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+                        Log.e(TAG, "Error parsing coordinates: " + e.getMessage());
+                        Toast.makeText(this, "Invalid coordinates format. Use: lat,lon", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Log.d(TAG, "Fetching route from: " + from + " to: " + to);
+                    fetchCoordinatesAndDisplayRoute(from, to, selectedMode[0]);
+                }
             }
         });
+
+    }
+    private void checkLocationPermissions() {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                    LOCATION_PERMISSION_REQUEST_CODE);
+        } else {
+            getCurrentLocation();
+        }
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                getCurrentLocation();
+            } else {
+                Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "Location permission denied");
+                fromLocation.setText("Your Location"); // Set default without GeoPoint
+            }
+        }
+    }
 
+    private void getCurrentLocation() {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        if (location != null) {
+                            currentLocation = new GeoPoint(location.getLatitude(), location.getLongitude());
+                            Log.d(TAG, "Current location: " + currentLocation);
 
+                            // Add a marker for the current location
+                            Marker currentMarker = new Marker(mapView);
+                            currentMarker.setPosition(currentLocation);
+                            currentMarker.setTitle("Your Location");
+                            currentMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                            mapView.getOverlays().add(currentMarker);
 
+                            // Center the map on the current location
+                            IMapController mapController = mapView.getController();
+                            mapController.setCenter(currentLocation);
 
+                            // Set "Your Location" as the default in the "From" field
+                            fromLocation.setText("Your Location");
+                            fromLocation.setTag(currentLocation); // Store GeoPoint for routing
 
+                            mapView.invalidate();
+                        } else {
+                            Log.d(TAG, "Location is null");
+                            Toast.makeText(RoutingActivity.this, "Unable to get current location", Toast.LENGTH_SHORT).show();
+                            fromLocation.setText("Your Location"); // Set default without GeoPoint
+                        }
+                    }
+                });
+    }
 
-// data from database :)
-
-
-//    private List<Polygon> savedPolygons = new ArrayList<>();
     private List<Integer> polygonIds = new ArrayList<>();
     private List<Float> polygonWaterLevels = new ArrayList<>();
 
@@ -205,12 +335,9 @@ public class RoutingActivity extends AppCompatActivity {
     }
 
 
-
     private List<String> polygonStartTimes = new ArrayList<>();
     private List<String> polygonEndTimes = new ArrayList<>();
     private List<Marker> polygonMarkers = new ArrayList<>();
-
-
 
 
     private void parsePolygonData(String jsonResponse) throws JSONException {
@@ -275,6 +402,7 @@ public class RoutingActivity extends AppCompatActivity {
 
         mapView.invalidate();
     }
+
     private String getLiveMarkerInfo(int polygonId, float waterLevel) {
         StringBuilder infoBuilder = new StringBuilder();
         String nowTime = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
@@ -322,8 +450,6 @@ public class RoutingActivity extends AppCompatActivity {
     }
 
 
-
-
     private String getWaterLevelDescription(float waterLevel) {
         switch ((int) waterLevel) {
             case 1:
@@ -339,8 +465,6 @@ public class RoutingActivity extends AppCompatActivity {
         }
 
     }
-
-
 
 
     private void showLiveInfoDialog(String startTime, String endTime, float waterLevel, int polygonId) {
@@ -373,7 +497,7 @@ public class RoutingActivity extends AppCompatActivity {
 
                 try {
                     SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
-                    Date now = sdf.parse(currentTime.substring(0,5));
+                    Date now = sdf.parse(currentTime.substring(0, 5));
                     Date start = sdf.parse(startTime);
                     Date end = sdf.parse(endTime);
 
@@ -397,16 +521,6 @@ public class RoutingActivity extends AppCompatActivity {
 
         dialog.setOnDismissListener(d -> handler.removeCallbacks(runnable));
     }
-
-
-
-
-
-
-
-
-
-
 
 
     private void fetchVisibilityData() {
@@ -524,6 +638,7 @@ public class RoutingActivity extends AppCompatActivity {
 
         mapView.invalidate();
     }
+
     private void showNoBlockageTodayDialog(int polygonId) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Polygon " + polygonId + " Info");
@@ -561,10 +676,6 @@ public class RoutingActivity extends AppCompatActivity {
 
         dialog.setOnDismissListener(d -> handler.removeCallbacks(runnable));
     }
-
-
-
-
 
 
     private Drawable resizeDrawable(int drawableId, int width, int height) {
@@ -644,7 +755,6 @@ public class RoutingActivity extends AppCompatActivity {
     }
 
     private void fetchRoute(GeoPoint fromPoint, GeoPoint toPoint, String mode) {
-        // Map travel modes to GraphHopper's vehicle types
         String vehicle;
         switch (mode.toLowerCase()) {
             case "driving":
@@ -657,13 +767,14 @@ public class RoutingActivity extends AppCompatActivity {
                 vehicle = "bike";
                 break;
             default:
-                vehicle = "car"; // Default to car
+                vehicle = "car";
+                Log.d(TAG, "Fetching route from: " + fromPoint.getLatitude() + "," + fromPoint.getLongitude() +
+                        " to: " + toPoint.getLatitude() + "," + toPoint.getLongitude() + " with mode: " + mode);
+                Log.w(TAG, "Unknown mode: " + mode + ", defaulting to car");
         }
 
-        // GraphHopper API key
         String graphHopperApiKey = "d20cbf9f-8c4d-4f87-94b9-09203bcba7cb"; // Replace with your API key
 
-        // Base GraphHopper URL for a single route (no waypoints initially)
         String graphHopperUrl = "https://graphhopper.com/api/1/route?" +
                 "point=" + fromPoint.getLatitude() + "," + fromPoint.getLongitude() +
                 "&point=" + toPoint.getLatitude() + "," + toPoint.getLongitude() +
@@ -680,28 +791,27 @@ public class RoutingActivity extends AppCompatActivity {
 
         Log.d(TAG, "GraphHopper URL: " + graphHopperUrl);
 
-        // Perform the network request to fetch the route
         new Thread(() -> {
             try {
                 OkHttpClient client = new OkHttpClient.Builder()
-                        .connectTimeout(45, TimeUnit.SECONDS)
-                        .readTimeout(45, TimeUnit.SECONDS)
-                        .writeTimeout(45, TimeUnit.SECONDS)
+                        .connectTimeout(60, TimeUnit.SECONDS)
+                        .readTimeout(60, TimeUnit.SECONDS)
+                        .writeTimeout(60, TimeUnit.SECONDS)
                         .build();
 
                 Request request = new Request.Builder()
                         .url(graphHopperUrl)
                         .build();
 
-                Log.d(TAG, "Sending GraphHopper route request...");
+                Log.d(TAG, "Sending GraphHopper route request for mode: " + vehicle);
                 long startTime = System.currentTimeMillis();
                 Response response = client.newCall(request).execute();
                 long endTime = System.currentTimeMillis();
-                Log.d(TAG, "GraphHopper route request completed in " + (endTime - startTime) + "ms");
+                Log.d(TAG, "GraphHopper request completed in " + (endTime - startTime) + "ms");
 
                 if (response.isSuccessful() && response.body() != null) {
                     String jsonResponse = response.body().string();
-                    Log.d(TAG, "GraphHopper route response: " + jsonResponse);
+                    Log.d(TAG, "GraphHopper response: " + jsonResponse);
 
                     JSONObject jsonObject = new JSONObject(jsonResponse);
                     JSONArray paths = jsonObject.getJSONArray("paths");
@@ -709,23 +819,39 @@ public class RoutingActivity extends AppCompatActivity {
                     if (paths.length() > 0) {
                         List<String> routeResponses = new ArrayList<>();
                         routeResponses.add(jsonResponse);
-                        runOnUiThread(() -> displayRoute(routeResponses, fromPoint, toPoint));
-                        Log.d(TAG, "Routes successfully fetched. Total routes: " + paths.length());
+
+                        List<RouteInfo> routeInfoList = new ArrayList<>();
+                        int[] colors = new int[]{
+                                Color.argb(150, 255, 0, 0),
+                                Color.argb(150, 0, 255, 0),
+                                Color.argb(150, 0, 0, 255),
+                                Color.argb(150, 255, 255, 0),
+                                Color.argb(150, 255, 0, 255)
+                        };
+
+                        for (int i = 0; i < paths.length() && i < 5; i++) {
+                            JSONObject path = paths.getJSONObject(i);
+                            double distance = path.getDouble("distance") / 1000;
+                            double duration = path.getDouble("time") / 1000 / 60;
+                            String colorName = getColorName(colors[i]);
+                            routeInfoList.add(new RouteInfo(colorName, distance, duration));
+                            Log.d(TAG, "Route " + (i + 1) + ": Mode=" + vehicle + ", Distance=" + distance + "km, Duration=" + duration + "min");
+                        }
+
+                        runOnUiThread(() -> displayRoute(routeResponses, fromPoint, toPoint, routeInfoList));
                     } else {
                         runOnUiThread(() -> Toast.makeText(this, "No routes found.", Toast.LENGTH_SHORT).show());
                         Log.e(TAG, "No paths found in GraphHopper response.");
                     }
                 } else {
                     String errorBody = response.body() != null ? response.body().string() : "No response body";
-                    Log.e(TAG, "Failed to fetch route: HTTP " + response.code() + " - " + response.message() + " - " + errorBody);
+                    Log.e(TAG, "Failed to fetch route: HTTP " + response.code() + " - " + errorBody);
                     runOnUiThread(() -> Toast.makeText(this, "Failed to fetch route: " + response.message(), Toast.LENGTH_SHORT).show());
                 }
             } catch (Exception e) {
-                e.printStackTrace();
                 Log.e(TAG, "Error fetching route: " + e.getMessage());
                 runOnUiThread(() -> Toast.makeText(this, "Error fetching route: " + e.getMessage(), Toast.LENGTH_SHORT).show());
             } finally {
-                // Ensure polygons are re-added even if route fetching fails
                 runOnUiThread(() -> {
                     for (Polygon polygon : savedPolygons) {
                         mapView.getOverlays().add(polygon);
@@ -735,27 +861,46 @@ public class RoutingActivity extends AppCompatActivity {
             }
         }).start();
     }
+    private static class RouteInfo {
+        String colorName;
+        double distance;
+        double duration;
 
-    private void displayRoute(List<String> routeResponses, GeoPoint fromPoint, GeoPoint toPoint) {
+        RouteInfo(String colorName, double distance, double duration) {
+            this.colorName = colorName;
+            this.distance = distance;
+            this.duration = duration;
+        }
+    }
+    private String getColorName(int color) {
+        if (color == Color.argb(150, 255, 0, 0)) return "Red";
+        if (color == Color.argb(150, 0, 255, 0)) return "Green";
+        if (color == Color.argb(150, 0, 0, 255)) return "Blue";
+        if (color == Color.argb(150, 255, 255, 0)) return "Yellow";
+        if (color == Color.argb(150, 255, 0, 255)) return "Magenta";
+        return "Unknown";
+    }
+    private void displayRoute(List<String> routeResponses, GeoPoint fromPoint, GeoPoint toPoint, List<RouteInfo> routeInfoList) {
         try {
-            // Clear previous routes but keep polygons
-            mapView.getOverlays().clear();
-            for (Polygon polygon : savedPolygons) {
-                mapView.getOverlays().add(polygon);
+            List<Overlay> savedOverlays = new ArrayList<>();
+            for (Overlay overlay : mapView.getOverlays()) {
+                if (overlay instanceof Polygon || overlay instanceof Marker) {
+                    savedOverlays.add(overlay);
+                }
             }
+            mapView.getOverlays().clear();
+            mapView.getOverlays().addAll(savedOverlays);
 
-            // Define colors for routes
             int[] colors = new int[]{
-                    Color.argb(150, 255, 0, 0),   // Transparent Red
-                    Color.argb(150, 0, 255, 0),   // Transparent Green
-                    Color.argb(150, 0, 0, 255),   // Transparent Blue
-                    Color.argb(150, 255, 255, 0), // Transparent Yellow
-                    Color.argb(150, 255, 0, 255)  // Transparent Magenta
+                    Color.argb(150, 255, 0, 0),
+                    Color.argb(150, 0, 255, 0),
+                    Color.argb(150, 0, 0, 255),
+                    Color.argb(150, 255, 255, 0),
+                    Color.argb(150, 255, 0, 255)
             };
 
             int routesDisplayed = 0;
 
-            // Process each route response
             for (String jsonResponse : routeResponses) {
                 JSONObject jsonObject = new JSONObject(jsonResponse);
                 JSONArray paths = jsonObject.getJSONArray("paths");
@@ -764,26 +909,22 @@ public class RoutingActivity extends AppCompatActivity {
                     JSONObject path = paths.getJSONObject(i);
                     String encodedPolyline = path.getString("points");
 
-                    // Decode the polyline
                     List<GeoPoint> geoPoints = decodePolyline(encodedPolyline);
 
-                    // Create and add the polyline
                     Polyline polyline = new Polyline();
                     polyline.setPoints(geoPoints);
                     polyline.setColor(colors[routesDisplayed % colors.length]);
                     polyline.setWidth(8.0f);
                     mapView.getOverlays().add(polyline);
 
-                    // Log route details
-                    double distance = path.getDouble("distance") / 1000; // Convert to km
-                    double duration = path.getDouble("time") / 1000 / 60; // Convert to minutes
-                    Log.d(TAG, "Route " + (routesDisplayed + 1) + ": Distance = " + distance + " km, Duration = " + duration + " mins");
+                    double distance = path.getDouble("distance") / 1000;
+                    double duration = path.getDouble("time") / 1000 / 60;
+                    Log.d(TAG, "Displayed Route " + (routesDisplayed + 1) + ": Distance=" + distance + "km, Duration=" + duration + "min");
 
                     routesDisplayed++;
                 }
             }
 
-            // Add start and end markers
             Marker startMarker = new Marker(mapView);
             startMarker.setPosition(fromPoint);
             startMarker.setTitle("Start: " + fromLocation.getText().toString());
@@ -796,10 +937,35 @@ public class RoutingActivity extends AppCompatActivity {
             endMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
             mapView.getOverlays().add(endMarker);
 
-            // Refresh the map
+            routeInfoContainer = findViewById(R.id.route_info_container);
+            bestRouteTime = findViewById(R.id.best_route_time);
+            alternativeRoutes = findViewById(R.id.alternative_routes);
+
+            if (!routeInfoList.isEmpty()) {
+                routeInfoList.sort((r1, r2) -> Double.compare(r1.duration, r2.duration));
+
+                RouteInfo bestRoute = routeInfoList.get(0);
+                String modeDisplay = selectedMode[0].substring(0, 1).toUpperCase() + selectedMode[0].substring(1).toLowerCase();
+                String durationText = formatDuration(bestRoute.duration);
+                bestRouteTime.setText(String.format("%s Best Route (%s): %.2f km, %s",
+                        modeDisplay, bestRoute.colorName, bestRoute.distance, durationText));
+
+                StringBuilder alternativesText = new StringBuilder("Alternative Routes:\n");
+                for (int i = 1; i < routeInfoList.size(); i++) {
+                    RouteInfo route = routeInfoList.get(i);
+                    String durationTextAlt = formatDuration(route.duration);
+                    alternativesText.append(String.format("%s Route: %.2f km, %s\n",
+                            route.colorName, route.distance, durationTextAlt));
+                }
+                alternativeRoutes.setText(alternativesText.toString());
+
+                routeInfoContainer.setVisibility(View.VISIBLE);
+            } else {
+                routeInfoContainer.setVisibility(View.GONE);
+            }
+
             mapView.invalidate();
             Log.d(TAG, "Displayed " + routesDisplayed + " routes.");
-
             Toast.makeText(this, routesDisplayed + " routes displayed.", Toast.LENGTH_SHORT).show();
 
         } catch (Exception e) {
@@ -808,7 +974,17 @@ public class RoutingActivity extends AppCompatActivity {
             Toast.makeText(this, "Error displaying routes: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
+    private String formatDuration(double minutes) {
+        int totalMinutes = (int) Math.round(minutes); // Round to nearest minute
+        int hours = totalMinutes / 60;
+        int remainingMinutes = totalMinutes % 60;
 
+        if (hours > 0) {
+            return hours + " hr " + remainingMinutes + " mins";
+        } else {
+            return totalMinutes + " mins";
+        }
+    }
     // Method to decode GraphHopper's encoded polyline
     private List<GeoPoint> decodePolyline(String encoded) {
         List<GeoPoint> poly = new ArrayList<>();
@@ -843,20 +1019,14 @@ public class RoutingActivity extends AppCompatActivity {
 
     // Load saved polygons from CSV in assets folder
     private void loadPolygonsFromAssets() {
-        int coloredPolygonCount = 0;  // Initialize counter for colored polygons
-        int totalRowCount = 0;  // To count the total number of rows read
-        int skippedRowCount = 0; // To count the number of skipped rows due to errors
-
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(getAssets().open("route_data.csv")))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                totalRowCount++;  // Increment total rows
-
                 if (!line.startsWith("Road Name")) { // Skip the header line
                     String[] values = line.split(",");
 
-                    // Ensure there are at least 12 elements in the row (including Road Name and 8 coordinates)
-                    if (values.length >= 12) {
+                    // Ensure there are at least 9 elements in the row (Road Name + 8 coordinates)
+                    if (values.length >= 9) {
                         try {
                             // Parse the latitudes and longitudes (we are ignoring the road name)
                             double lat1 = Double.parseDouble(values[1].trim());
@@ -868,30 +1038,23 @@ public class RoutingActivity extends AppCompatActivity {
                             double lat4 = Double.parseDouble(values[7].trim());
                             double lon4 = Double.parseDouble(values[8].trim());
 
-                            // Parse the water level as a float (since it may contain decimals like 2.0)
-                            float waterLevel = Float.parseFloat(values[11].trim());
-
-                            // Determine the polygon fill color based on the water level
-                            int fillColor = getFillColorForWaterLevel(waterLevel);
-
                             GeoPoint p1 = new GeoPoint(lat1, lon1);
                             GeoPoint p2 = new GeoPoint(lat2, lon2);
                             GeoPoint p3 = new GeoPoint(lat3, lon3);
                             GeoPoint p4 = new GeoPoint(lat4, lon4);
 
-                            // Create a list of points for the polygon
+                            // Create a polygon from the points
                             List<GeoPoint> points = new ArrayList<>();
                             points.add(p1);
                             points.add(p2);
                             points.add(p3);
                             points.add(p4);
 
-                            // Create the polygon
                             Polygon polygon = new Polygon();
                             polygon.setPoints(points);
-                            polygon.setFillColor(fillColor);  // Set the color based on the water level
-                            polygon.setStrokeColor(Color.BLACK); // Black outline
-                            polygon.setStrokeWidth(2.5f); // Default stroke width
+                            polygon.setFillColor(0x220000FF);  // Transparent blue
+                            polygon.setStrokeColor(0xFF0000FF); // Blue outline
+                            polygon.setStrokeWidth(2.5f);
 
                             // Add the polygon to the saved polygons list
                             savedPolygons.add(polygon);
@@ -899,63 +1062,14 @@ public class RoutingActivity extends AppCompatActivity {
                             // Add the polygon to the map
                             mapView.getOverlays().add(polygon);
 
-                            // Log polygon details (for all polygons)
-                            Log.d(TAG, "Polygon Loaded: Index = " + totalRowCount +
-                                    ", Points = [" + p1 + ", " + p2 + ", " + p3 + ", " + p4 + "]" +
-                                    ", Water Level = " + waterLevel +
-                                    ", Fill Color = " + fillColor +
-                                    ", Stroke Color = BLACK");
-
-                            // Add the click listener to the polygon to show the details in a dialog box
-                            final int index = totalRowCount - 1;  // Get the index of the polygon
-                            final String rainThreshold = values[9];  // Rain Threshold (mm)
-                            final String waterloggedDuration = values[10];  // Waterlogged Duration (hrs)
-                            final String waterLevelStr = values[11];  // Water Level
-
-                            polygon.setOnClickListener(new Polygon.OnClickListener() {
-                                @Override
-                                public boolean onClick(Polygon polygon, MapView mapView, GeoPoint eventPos) {
-                                    // Show the polygon's details in a dialog box
-                                    showPolygonDetailsDialog(index, rainThreshold, waterloggedDuration, waterLevelStr);
-                                    return true;
-                                }
-                            });
-
-                            // Add a marker at a specific location (e.g., center or any random point on the polygon)
-                            Marker marker = new Marker(mapView);
-                            marker.setPosition(p1); // Set the marker at the first point of the polygon
-                            marker.setTitle("Polygon " + totalRowCount); // Marker title
-
-                            // Add the marker to the map
-                            mapView.getOverlays().add(marker);
-
-                            // Add a click listener to the marker to show the polygon's details in the dialog box
-                            marker.setOnMarkerClickListener(new Marker.OnMarkerClickListener() {
-                                @Override
-                                public boolean onMarkerClick(Marker clickedMarker, MapView clickedMapView) {
-                                    showPolygonDetailsDialog(index, rainThreshold, waterloggedDuration, waterLevelStr);
-                                    return true;
-                                }
-                            });
+                            Log.d(TAG, "Loaded polygon from CSV: " + points);
 
                         } catch (NumberFormatException e) {
-                            Log.e(TAG, "Error parsing coordinates or water level from CSV line: " + line, e);
-                            skippedRowCount++; // Increment skipped rows count
+                            Log.e(TAG, "Error parsing coordinates from CSV line: " + line, e);
                         }
-                    } else {
-                        skippedRowCount++; // Increment skipped rows count for rows with insufficient columns
-                        Log.d(TAG, "Skipping row due to insufficient columns: " + line);
                     }
                 }
             }
-
-            // Log the total and skipped rows for debugging
-            Log.d(TAG, "Total rows processed: " + totalRowCount);
-            Log.d(TAG, "Total rows skipped: " + skippedRowCount);
-            Log.d(TAG, "Total number of colored polygons: " + coloredPolygonCount);
-
-            // Log the number of polygons created
-            Log.d(TAG, "Total polygons loaded: " + savedPolygons.size());
 
             // Refresh the map to show the polygons
             mapView.invalidate();
@@ -965,29 +1079,6 @@ public class RoutingActivity extends AppCompatActivity {
             Log.e("RoutingActivity", "Error reading CSV from assets", e);
         }
     }
-
-
-    // Method to show the polygon details in a dialog box
-//    private void showPolygonDetailsDialog(int index, String rainThreshold, String waterloggedDuration, String waterLevel) {
-//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-//        builder.setTitle("Polygon Details");
-//
-//        // Set the dialog message with the polygon's details
-//        builder.setMessage("Index: " + index + "\n" +
-//                "Rain Threshold (mm): " + rainThreshold + "\n" +
-//                "Waterlogged Duration (hrs): " + waterloggedDuration + "\n" +
-//                "Water Level: " + waterLevel);
-//
-//        // Add a button to close the dialog
-//        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
-//
-//        // Show the dialog
-//        builder.show();
-//    }
-
-
-
-
 
     private void showPolygonDetailsDialog(int index, String rainThreshold, String waterloggedDuration, String waterLevel) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -1004,17 +1095,8 @@ public class RoutingActivity extends AppCompatActivity {
 
         // Show the dialog
         builder.show();
+
     }
-
-
-
-
-
-
-
-
-    // Method to map water level to colors
-    // Method to map water level to transparent colors
     private int getFillColorForWaterLevel(float waterLevel) {
         switch ((int) waterLevel) {
             case 1:
@@ -1032,54 +1114,5 @@ public class RoutingActivity extends AppCompatActivity {
         // You can add logging or error handling if needed.
         return -1;  // Invalid color
     }
-
-
-
-
-
-
-
-    // Method to show the polygon details in a dialog box
-//    private void showPolygonDetailsDialog(int index, String rainThreshold, String waterloggedDuration, String waterLevel) {
-//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-//        builder.setTitle("Polygon Details");
-//
-//        // Set the dialog message with the polygon's details
-//        builder.setMessage("Index: " + index + "\n" +
-//                "Rain Threshold (mm): " + rainThreshold + "\n" +
-//                "Waterlogged Duration (hrs): " + waterloggedDuration + "\n" +
-//                "Water Level: " + waterLevel);
-//
-//        // Add a button to close the dialog
-//        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
-//
-//        // Show the dialog
-//        builder.show();
-//    }
-
-    // Helper method to get the fill color based on the water level
-//    private int getFillColorForWaterLevel(float waterLevel) {
-//        // Convert water level to an integer for easier comparison, if needed
-//        int level = (int) waterLevel;  // Casting the float to int for comparison
-//
-//        switch (level) {
-//            case 1:
-//                return Color.argb(150, 0, 255, 0); // Green transparent
-//            case 2:
-//                return Color.argb(150, 0, 0, 255); // Blue transparent (same as before)
-//            case 3:
-//                return Color.argb(150, 255, 0, 0); // Red transparent
-//            case 4:
-//                return Color.argb(150, 139, 69, 19); // Brown transparent
-//            default:
-//                return Color.argb(150, 0, 0, 255); // Default to blue transparent if invalid value
-//        }
-//    }
-
-
-
-
-
-
 
 }
