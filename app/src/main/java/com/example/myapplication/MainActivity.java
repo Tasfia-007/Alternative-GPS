@@ -182,7 +182,10 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(MainActivity.this, "Please log in to access your profile.", Toast.LENGTH_SHORT).show();
                     }
                     return true;
+
+
                 }
+
                 return false;
             });
 
@@ -209,8 +212,8 @@ public class MainActivity extends AppCompatActivity {
 
             popup.setOnMenuItemClickListener(item -> {
                 int itemId = item.getItemId();
+
                 if (itemId == R.id.alert) {
-                    // Check if user is logged in before navigating
                     if (isLoggedIn()) {
                         Intent intent = new Intent(MainActivity.this, AlertActivity.class);
                         startActivity(intent);
@@ -218,35 +221,42 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(this, "Please log in first", Toast.LENGTH_SHORT).show();
                     }
                     return true;
+
                 } else if (itemId == R.id.home) {
                     Toast.makeText(this, "Home clicked", Toast.LENGTH_SHORT).show();
                     return true;
-                } else  if (itemId == R.id.weather) {
-                    // Navigate to WeatherActivity
+
+                } else if (itemId == R.id.weather) {
                     Intent intent = new Intent(MainActivity.this, WeatherActivity.class);
                     startActivity(intent);
                     return true;
+
                 } else if (itemId == R.id.report_issue) {
                     Intent intent = new Intent(MainActivity.this, ReportIssueActivity.class);
                     startActivity(intent);
                     return true;
 
-
-            } else if (itemId == R.id.water) {
+                } else if (itemId == R.id.water) {
                     Intent intent = new Intent(MainActivity.this, LogAreaActivity.class);
                     startActivity(intent);
                     return true;
-                }
 
-             else if (itemId == R.id.help) {
+                } else if (itemId == R.id.book_tickets) {
+                    Intent ticketIntent = new Intent(MainActivity.this, BookTicketsActivity.class);
+                    startActivity(ticketIntent);
+                    return true;
+
+                } else if (itemId == R.id.help) {
                     Toast.makeText(this, "Help clicked", Toast.LENGTH_SHORT).show();
                     return true;
                 }
+
                 return false;
             });
 
             popup.show();
         });
+
 
 //for map location
 

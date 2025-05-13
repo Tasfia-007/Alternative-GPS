@@ -678,30 +678,7 @@ public class RoutingActivity extends AppCompatActivity {
     }
 
 
-    private Drawable resizeDrawable(int drawableId, int width, int height) {
-        Drawable drawable = ContextCompat.getDrawable(this, drawableId);
-        if (drawable == null) return null;
 
-        // If the drawable is already a BitmapDrawable, resize it
-        if (drawable instanceof BitmapDrawable) {
-            Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
-            Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false);
-            return new BitmapDrawable(getResources(), resizedBitmap);
-        }
-        // If it's a VectorDrawable, convert it to a Bitmap and resize
-        else if (drawable instanceof VectorDrawable) {
-            return getBitmapFromVector(drawable, width, height);
-        }
-        return drawable; // Return original if not handled
-    }
-
-    private Drawable getBitmapFromVector(Drawable vectorDrawable, int width, int height) {
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        vectorDrawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
-        vectorDrawable.draw(canvas);
-        return new BitmapDrawable(getResources(), bitmap);
-    }
 
     private void fetchCoordinatesAndDisplayRoute(String from, String to, String mode) {
         new Thread(() -> {
@@ -1018,6 +995,62 @@ public class RoutingActivity extends AppCompatActivity {
     }
 
     // Load saved polygons from CSV in assets folder
+
+
+
+    private int getFillColorForWaterLevel(float waterLevel) {
+        switch ((int) waterLevel) {
+            case 1:
+                return Color.argb(150, 255, 255, 0); // Transparent Yellow
+            case 2:
+                return Color.argb(150, 0, 0, 255);   // Transparent Blue
+            case 3:
+                return Color.argb(150, 255, 0, 0);   // Transparent Red
+            case 4:
+                return Color.argb(150, 139, 69, 19); // Transparent Brown
+            // You can add more cases if needed, for other water levels
+        }
+
+        // If the water level is not 1, 2, 3, or 4, the polygon won't be drawn
+        // You can add logging or error handling if needed.
+        return -1;  // Invalid color
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+//    private void showPolygonDetailsDialog(int index, String rainThreshold, String waterloggedDuration, String waterLevel) {
+//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//        builder.setTitle("Polygon Details");
+//
+//        // Set the dialog message with the polygon's details
+//        builder.setMessage("Index: " + index + "\n" +
+//                "Rain Threshold (mm): " + rainThreshold + "\n" +
+//                "Waterlogged Duration (mins): " + waterloggedDuration + "\n" +
+//                "Water Level: " + waterLevel);
+//
+//        // Add a button to close the dialog
+//        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+//
+//        // Show the dialog
+//        builder.show();
+//
+//    }
+
+
+
+
+
+
     private void loadPolygonsFromAssets() {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(getAssets().open("route_data.csv")))) {
             String line;
@@ -1080,39 +1113,11 @@ public class RoutingActivity extends AppCompatActivity {
         }
     }
 
-    private void showPolygonDetailsDialog(int index, String rainThreshold, String waterloggedDuration, String waterLevel) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Polygon Details");
 
-        // Set the dialog message with the polygon's details
-        builder.setMessage("Index: " + index + "\n" +
-                "Rain Threshold (mm): " + rainThreshold + "\n" +
-                "Waterlogged Duration (mins): " + waterloggedDuration + "\n" +
-                "Water Level: " + waterLevel);
 
-        // Add a button to close the dialog
-        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
 
-        // Show the dialog
-        builder.show();
 
-    }
-    private int getFillColorForWaterLevel(float waterLevel) {
-        switch ((int) waterLevel) {
-            case 1:
-                return Color.argb(150, 255, 255, 0); // Transparent Yellow
-            case 2:
-                return Color.argb(150, 0, 0, 255);   // Transparent Blue
-            case 3:
-                return Color.argb(150, 255, 0, 0);   // Transparent Red
-            case 4:
-                return Color.argb(150, 139, 69, 19); // Transparent Brown
-            // You can add more cases if needed, for other water levels
-        }
 
-        // If the water level is not 1, 2, 3, or 4, the polygon won't be drawn
-        // You can add logging or error handling if needed.
-        return -1;  // Invalid color
-    }
+
 
 }

@@ -60,6 +60,9 @@ dependencies {
     implementation(libs.osmdroid.android.v6111)
     implementation(libs.osmdroid.android.v6112)
     implementation(libs.okhttp.v493)
+    implementation(libs.jsoup)
+
+
 
 
 
