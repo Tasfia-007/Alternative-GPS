@@ -1,6 +1,8 @@
 package com.example.myapplication;
 
 import android.Manifest;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -34,9 +36,10 @@ public class AlertActivity extends AppCompatActivity {
     private String currentLocation = "Unknown Location";
 
     // Supabase API details
-    private static final String SUPABASE_URL = "https://kquvuygavkhsxvdpqyfn.supabase.co";
+    private static final String SUPABASE_URL = "https://kquvuygavkhsxvdpqyfn.supabase.co"; // Replace with your Supabase URL
     private static final String SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdXZ1eWdhdmtoc3h2ZHBxeWZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzcxMDQ4NjcsImV4cCI6MjA1MjY4MDg2N30.YVPKExfM-ZxzO9JvM9RQZQrBiyG1iT50fiwGUcvw8EI";
     private static final String CONTACT_TABLE = "emergency_contacts";
+    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,8 +50,12 @@ public class AlertActivity extends AppCompatActivity {
         contactNumber = findViewById(R.id.contact_number);
         alertButton = findViewById(R.id.alert_button);
 
-        // Fetch emergency contact
-        fetchEmergencyContact();
+        // Initialize SharedPreferences to get the logged-in user information
+        sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE);
+
+        // Fetch emergency contact based on the logged-in user's userId
+        String loggedInUserId = sharedPreferences.getString("userId", "");
+        fetchEmergencyContact(loggedInUserId);
 
         // Check SMS permissions
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
@@ -68,12 +75,15 @@ public class AlertActivity extends AppCompatActivity {
         });
     }
 
-    // Fetch emergency contact from Supabase
-    private void fetchEmergencyContact() {
+    // Fetch emergency contact based on logged-in user's userId
+    private void fetchEmergencyContact(String userId) {
         new Thread(() -> {
             try {
-                OkHttpClient client = new OkHttpClient();
-                String url = SUPABASE_URL + "/rest/v1/" + CONTACT_TABLE + "?select=*";
+                OkHttpClient client = new OkHttpClient(); // Create the OkHttpClient instance here
+                // Modify the URL to fetch data based on logged-in user's userId
+                String url = SUPABASE_URL + "/rest/v1/" + CONTACT_TABLE + "?user_id=eq." + userId;
+
+                Log.d(TAG, "Supabase URL: " + url); // Log the URL to check if it's correctly formed
 
                 Request request = new Request.Builder()
                         .url(url)
@@ -82,8 +92,13 @@ public class AlertActivity extends AppCompatActivity {
                         .build();
 
                 Response response = client.newCall(request).execute();
-                if (response.isSuccessful() && response.body() != null) {
-                    String responseBody = response.body().string();
+
+                // Log the response to understand what is being returned
+                if (response.isSuccessful()) {
+                    String responseBody = response.body() != null ? response.body().string() : "";
+                    Log.d(TAG, "Response Body: " + responseBody); // Log the full response body
+
+                    // Parse the JSON response
                     JSONArray jsonArray = new JSONArray(responseBody);
 
                     if (jsonArray.length() > 0) {
@@ -106,6 +121,8 @@ public class AlertActivity extends AppCompatActivity {
                     });
                 } else {
                     Log.e(TAG, "Failed to fetch emergency contact: " + response.code());
+                    String errorBody = response.body() != null ? response.body().string() : "";
+                    Log.e(TAG, "Error Response Body: " + errorBody); // Log error body to understand the response
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Error fetching emergency contact: ", e);

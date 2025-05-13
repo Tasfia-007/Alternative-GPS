@@ -232,29 +232,29 @@ public class SignUpActivity extends AppCompatActivity {
         startActivityForResult(galleryIntent, GALLERY_REQUEST_CODE);
     }
 
-    private boolean validateInput(String name, String email, String password) {
-        if (TextUtils.isEmpty(name)) {
-            Toast.makeText(this, "Name is required", Toast.LENGTH_SHORT).show();
-            Log.e(TAG, "Validation failed: Name is empty");
-            return false;
-        }
-        if (TextUtils.isEmpty(email)) {
-            Toast.makeText(this, "Email is required", Toast.LENGTH_SHORT).show();
-            Log.e(TAG, "Validation failed: Email is empty");
-            return false;
-        }
-        if (TextUtils.isEmpty(password)) {
-            Toast.makeText(this, "Password is required", Toast.LENGTH_SHORT).show();
-            Log.e(TAG, "Validation failed: Password is empty");
-            return false;
-        }
-        if (password.length() < 6 || !password.matches(".*\\d.*")) {
-            Toast.makeText(this, "Password must be at least 6 characters long and contain a digit", Toast.LENGTH_SHORT).show();
-            Log.e(TAG, "Validation failed: Password too short or missing digit");
-            return false;
-        }
-        return true;
-    }
+//    private boolean validateInput(String name, String email, String password) {
+//        if (TextUtils.isEmpty(name)) {
+//            Toast.makeText(this, "Name is required", Toast.LENGTH_SHORT).show();
+//            Log.e(TAG, "Validation failed: Name is empty");
+//            return false;
+//        }
+//        if (TextUtils.isEmpty(email)) {
+//            Toast.makeText(this, "Email is required", Toast.LENGTH_SHORT).show();
+//            Log.e(TAG, "Validation failed: Email is empty");
+//            return false;
+//        }
+//        if (TextUtils.isEmpty(password)) {
+//            Toast.makeText(this, "Password is required", Toast.LENGTH_SHORT).show();
+//            Log.e(TAG, "Validation failed: Password is empty");
+//            return false;
+//        }
+//        if (password.length() < 6 || !password.matches(".*\\d.*")) {
+//            Toast.makeText(this, "Password must be at least 6 characters long and contain a digit", Toast.LENGTH_SHORT).show();
+//            Log.e(TAG, "Validation failed: Password too short or missing digit");
+//            return false;
+//        }
+//        return true;
+//    }
 
     private String hashPassword(String password) {
         try {
@@ -313,11 +313,17 @@ public class SignUpActivity extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                     });
-                }
-                else {
+                } else {
                     String errorMessage = response.body() != null ? response.body().string() : "Unknown Error";
                     Log.e(TAG, "Signup Failed: " + errorMessage);
-                    runOnUiThread(() -> Toast.makeText(SignUpActivity.this, "Signup failed: " + errorMessage, Toast.LENGTH_SHORT).show());
+
+                    if (errorMessage.contains("duplicate key value violates unique constraint")) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(SignUpActivity.this, "Username taken. Please choose a different one.", Toast.LENGTH_LONG).show();
+                        });
+                    } else {
+                        runOnUiThread(() -> Toast.makeText(SignUpActivity.this, "Signup failed: " + errorMessage, Toast.LENGTH_SHORT).show());
+                    }
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Signup request failed: " + e.getMessage());
@@ -325,6 +331,31 @@ public class SignUpActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }).start();
+    }
+
+    private boolean validateInput(String name, String email, String password) {
+        if (TextUtils.isEmpty(name)) {
+            Toast.makeText(this, "Name is required", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Validation failed: Name is empty");
+            return false;
+        }
+        if (TextUtils.isEmpty(email)) {
+            Toast.makeText(this, "Email is required", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Validation failed: Email is empty");
+            return false;
+        }
+        if (TextUtils.isEmpty(password)) {
+            Toast.makeText(this, "Password is required", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Validation failed: Password is empty");
+            return false;
+        }
+        if (password.length() < 6 || !password.matches(".*\\d.*")) {
+            // Display a toast with a message for password validation failure
+            Toast.makeText(this, "Password must be at least 6 characters long and contain a digit", Toast.LENGTH_LONG).show();
+            Log.e(TAG, "Validation failed: Password too short or missing digit");
+            return false;
+        }
+        return true;
     }
 
 
