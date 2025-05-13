@@ -19,4 +19,12 @@
         <item>cycling</item>
     </string-array>
 
+
+    <string-array name="website_options">
+        <item>Shohoz</item>
+        <item>Bangladesh Railway</item>
+        <item>Biman Bangladesh</item>
+    </string-array>
+
+
 </resources>

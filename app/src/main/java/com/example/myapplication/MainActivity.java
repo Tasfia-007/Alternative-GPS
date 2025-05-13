@@ -241,6 +241,11 @@ public class MainActivity extends AppCompatActivity {
                     startActivity(intent);
                     return true;
 
+                } else if (itemId == R.id.travel_route_schedule) {
+                    Intent intent = new Intent(MainActivity.this, TravelActivity.class);
+                    startActivity(intent);
+                    return true;
+
                 } else if (itemId == R.id.book_tickets) {
                     Intent ticketIntent = new Intent(MainActivity.this, BookTicketsActivity.class);
                     startActivity(ticketIntent);
@@ -256,6 +261,7 @@ public class MainActivity extends AppCompatActivity {
 
             popup.show();
         });
+
 
 
 //for map location

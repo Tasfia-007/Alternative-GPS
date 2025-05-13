@@ -15,6 +15,10 @@
         android:id="@+id/alert"
         android:title="Alert" />
     <item
+        android:id="@+id/travel_route_schedule"
+        android:title="Travel Route Schedule" />
+
+    <item
         android:id="@+id/book_tickets"
         android:title="Book Tickets" />
     <item

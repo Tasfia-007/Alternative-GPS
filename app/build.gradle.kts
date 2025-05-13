@@ -51,6 +51,7 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
+    implementation(libs.jsoup)
     androidTestImplementation(libs.espresso.core)
 
     implementation(libs.gson)
