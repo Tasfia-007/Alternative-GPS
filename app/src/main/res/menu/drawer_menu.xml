@@ -19,6 +19,9 @@
         android:title="Travel Route Schedule" />
 
     <item
+        android:id="@+id/book_tickets"
+        android:title="Book Tickets" />
+    <item
         android:id="@+id/help"
         android:title="Help/Support" />
 </menu>
