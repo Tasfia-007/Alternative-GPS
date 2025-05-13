@@ -74,7 +74,7 @@
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:src="@drawable/menubar"
-
+                    android:background="#009689"
                     android:contentDescription="@string/menu_icon"
                     android:layout_marginEnd="8dp"
                     android:padding="5dp" />
@@ -83,7 +83,7 @@
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:src="@drawable/ic_mic"
-
+                    android:background="#009689"
                     android:contentDescription="Voice Search"
                     android:layout_marginEnd="8dp"
                     android:padding="8dp" />
@@ -105,7 +105,7 @@
                     android:layout_height="40dp"
                     android:src="@drawable/baseline_account_circle_24"
                     android:contentDescription="@string/profile_icon"
-
+                    android:background="#009689"
                     android:layout_marginEnd="8dp"
                     android:padding="5dp" />
             </LinearLayout>
@@ -129,7 +129,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="8dp"
 
-                        app:backgroundTint="#673AB7"
+                        app:backgroundTint="#104B13"
                         android:padding="10dp"
                         android:text="Banks"
                         android:textColor="#FFFFFF" />
@@ -139,7 +139,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="8dp"
-                        app:backgroundTint="#673AB7"
+                        app:backgroundTint="#104B13"
                         android:padding="10dp"
                         android:text="Hospitals"
                         android:textColor="#FFFFFF" />
@@ -150,7 +150,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="8dp"
 
-                        app:backgroundTint="#673AB7"
+                        app:backgroundTint="#104B13"
                         android:padding="10dp"
                         android:text="Schools"
                         android:textColor="#FFFFFF" />
@@ -161,7 +161,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="8dp"
 
-                        app:backgroundTint="#673AB7"
+                        app:backgroundTint="#104B13"
                         android:padding="10dp"
                         android:text="Police Stations"
                         android:textColor="#FFFFFF" />
@@ -172,7 +172,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="8dp"
 
-                        app:backgroundTint="#673AB7"
+                        app:backgroundTint="#104B13"
                         android:padding="10dp"
                         android:text="Gas Stations"
                         android:textColor="#FFFFFF" />

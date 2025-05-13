@@ -237,6 +237,12 @@ public class MainActivity extends AppCompatActivity {
                     startActivity(intent);
                     return true;
                 }
+                else if(itemId==R.id.travel_route_schedule)
+                {
+                    Intent intent = new Intent(MainActivity.this, TravelActivity.class);
+                    startActivity(intent);
+                    return true;
+                }
 
              else if (itemId == R.id.help) {
                     Toast.makeText(this, "Help clicked", Toast.LENGTH_SHORT).show();
