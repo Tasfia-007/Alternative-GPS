@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">H2Go - Step in Rain</string>
     <string name="menu_icon">Menu Icon</string>
     <string name="profile_icon">Profile Icon</string>
     <string name="traffic_moderate">Traffic: Moderate</string>
@@ -18,5 +18,13 @@
         <item>walking</item>
         <item>cycling</item>
     </string-array>
+
+
+    <string-array name="website_options">
+        <item>Shohoz</item>
+        <item>Bangladesh Railway</item>
+        <item>Biman Bangladesh</item>
+    </string-array>
+
 
 </resources>

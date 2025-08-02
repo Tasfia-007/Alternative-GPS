@@ -987,30 +987,7 @@ public class RoutingActivity extends AppCompatActivity {
     }
 
 
-    private Drawable resizeDrawable(int drawableId, int width, int height) {
-        Drawable drawable = ContextCompat.getDrawable(this, drawableId);
-        if (drawable == null) return null;
 
-        // If the drawable is already a BitmapDrawable, resize it
-        if (drawable instanceof BitmapDrawable) {
-            Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
-            Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false);
-            return new BitmapDrawable(getResources(), resizedBitmap);
-        }
-        // If it's a VectorDrawable, convert it to a Bitmap and resize
-        else if (drawable instanceof VectorDrawable) {
-            return getBitmapFromVector(drawable, width, height);
-        }
-        return drawable; // Return original if not handled
-    }
-
-    private Drawable getBitmapFromVector(Drawable vectorDrawable, int width, int height) {
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        vectorDrawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
-        vectorDrawable.draw(canvas);
-        return new BitmapDrawable(getResources(), bitmap);
-    }
 
     private void fetchCoordinatesAndDisplayRoute(String from, String to, String mode) {
         new Thread(() -> {
@@ -1064,6 +1041,7 @@ public class RoutingActivity extends AppCompatActivity {
     }
 
     private void fetchRoute(GeoPoint fromPoint, GeoPoint toPoint, String mode) {
+
         String vehicle;
         switch (mode.toLowerCase()) {
             case "driving":
@@ -1191,14 +1169,8 @@ public class RoutingActivity extends AppCompatActivity {
     }
     private void displayRoute(List<String> routeResponses, GeoPoint fromPoint, GeoPoint toPoint, List<RouteInfo> routeInfoList) {
         try {
-            List<Overlay> savedOverlays = new ArrayList<>();
-            for (Overlay overlay : mapView.getOverlays()) {
-                if (overlay instanceof Polygon || overlay instanceof Marker) {
-                    savedOverlays.add(overlay);
-                }
-            }
-            mapView.getOverlays().clear();
-            mapView.getOverlays().addAll(savedOverlays);
+            // Remove previous route overlays (only polylines)
+            mapView.getOverlays().removeIf(overlay -> overlay instanceof Polyline);
 
             int[] colors = new int[]{
                     Color.argb(150, 255, 0, 0),
@@ -1210,6 +1182,7 @@ public class RoutingActivity extends AppCompatActivity {
 
             int routesDisplayed = 0;
 
+            // Loop through each route response
             for (String jsonResponse : routeResponses) {
                 JSONObject jsonObject = new JSONObject(jsonResponse);
                 JSONArray paths = jsonObject.getJSONArray("paths");
@@ -1234,6 +1207,7 @@ public class RoutingActivity extends AppCompatActivity {
                 }
             }
 
+            // Add markers for start and end points
             Marker startMarker = new Marker(mapView);
             startMarker.setPosition(fromPoint);
             startMarker.setTitle("Start: " + fromLocation.getText().toString());
@@ -1246,6 +1220,7 @@ public class RoutingActivity extends AppCompatActivity {
             endMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
             mapView.getOverlays().add(endMarker);
 
+            // Route info update
             routeInfoContainer = findViewById(R.id.route_info_container);
             bestRouteTime = findViewById(R.id.best_route_time);
             alternativeRoutes = findViewById(R.id.alternative_routes);
@@ -1283,6 +1258,7 @@ public class RoutingActivity extends AppCompatActivity {
             Toast.makeText(this, "Error displaying routes: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
+
     private String formatDuration(double minutes) {
         int totalMinutes = (int) Math.round(minutes); // Round to nearest minute
         int hours = totalMinutes / 60;
@@ -1327,6 +1303,62 @@ public class RoutingActivity extends AppCompatActivity {
     }
 
     // Load saved polygons from CSV in assets folder
+
+
+
+    private int getFillColorForWaterLevel(float waterLevel) {
+        switch ((int) waterLevel) {
+            case 1:
+                return Color.argb(150, 255, 255, 0); // Transparent Yellow
+            case 2:
+                return Color.argb(150, 0, 0, 255);   // Transparent Blue
+            case 3:
+                return Color.argb(150, 255, 0, 0);   // Transparent Red
+            case 4:
+                return Color.argb(150, 139, 69, 19); // Transparent Brown
+            // You can add more cases if needed, for other water levels
+        }
+
+        // If the water level is not 1, 2, 3, or 4, the polygon won't be drawn
+        // You can add logging or error handling if needed.
+        return -1;  // Invalid color
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+//    private void showPolygonDetailsDialog(int index, String rainThreshold, String waterloggedDuration, String waterLevel) {
+//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//        builder.setTitle("Polygon Details");
+//
+//        // Set the dialog message with the polygon's details
+//        builder.setMessage("Index: " + index + "\n" +
+//                "Rain Threshold (mm): " + rainThreshold + "\n" +
+//                "Waterlogged Duration (mins): " + waterloggedDuration + "\n" +
+//                "Water Level: " + waterLevel);
+//
+//        // Add a button to close the dialog
+//        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+//
+//        // Show the dialog
+//        builder.show();
+//
+//    }
+
+
+
+
+
+
     private void loadPolygonsFromAssets() {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(getAssets().open("route_data.csv")))) {
             String line;
@@ -1389,39 +1421,11 @@ public class RoutingActivity extends AppCompatActivity {
         }
     }
 
-    private void showPolygonDetailsDialog(int index, String rainThreshold, String waterloggedDuration, String waterLevel) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Polygon Details");
 
-        // Set the dialog message with the polygon's details
-        builder.setMessage("Index: " + index + "\n" +
-                "Rain Threshold (mm): " + rainThreshold + "\n" +
-                "Waterlogged Duration (mins): " + waterloggedDuration + "\n" +
-                "Water Level: " + waterLevel);
 
-        // Add a button to close the dialog
-        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
 
-        // Show the dialog
-        builder.show();
 
-    }
-    private int getFillColorForWaterLevel(float waterLevel) {
-        switch ((int) waterLevel) {
-            case 1:
-                return Color.argb(150, 255, 255, 0); // Transparent Yellow
-            case 2:
-                return Color.argb(150, 0, 0, 255);   // Transparent Blue
-            case 3:
-                return Color.argb(150, 255, 0, 0);   // Transparent Red
-            case 4:
-                return Color.argb(150, 139, 69, 19); // Transparent Brown
-            // You can add more cases if needed, for other water levels
-        }
 
-        // If the water level is not 1, 2, 3, or 4, the polygon won't be drawn
-        // You can add logging or error handling if needed.
-        return -1;  // Invalid color
-    }
+
 
 }

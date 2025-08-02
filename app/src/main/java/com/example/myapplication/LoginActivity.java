@@ -6,11 +6,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -79,6 +81,24 @@ public class LoginActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+
+
+        ImageView togglePasswordVisibility = findViewById(R.id.toggle_password_visibility);
+
+        togglePasswordVisibility.setOnClickListener(v -> {
+            if (passwordInput.getInputType() == (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
+                // Show password
+                passwordInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                togglePasswordVisibility.setImageResource(R.drawable.eyeopen); // Show eye-open icon
+            } else {
+                // Hide password
+                passwordInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                togglePasswordVisibility.setImageResource(R.drawable.eye); // Show eye-closed icon
+            }
+            passwordInput.setSelection(passwordInput.getText().length()); // Move cursor to the end
+        });
+
     }
 
     private boolean validateInput(String email, String password) {
@@ -93,58 +113,7 @@ public class LoginActivity extends AppCompatActivity {
         return true;
     }
 
-//    private void loginUser(String email, String password) {
-//        new Thread(() -> {
-//            try {
-//                OkHttpClient client = new OkHttpClient();
-//
-//                String url = SUPABASE_URL + "/rest/v1/" + SIGNUP_TABLE + "?emailid=eq." + email;
-//                Log.d(TAG, "Login URL: " + url);
-//
-//                Request request = new Request.Builder()
-//                        .url(url)
-//                        .addHeader("apikey", SUPABASE_KEY)
-//                        .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
-//                        .addHeader("Content-Type", "application/json")
-//                        .get()
-//                        .build();
-//
-//                Response response = client.newCall(request).execute();
-//
-//                if (response.isSuccessful()) {
-//                    String responseBody = response.body() != null ? response.body().string() : "";
-//                    JSONArray jsonArray = new JSONArray(responseBody);
-//
-//                    if (jsonArray.length() > 0) {
-//                        JSONObject user = jsonArray.getJSONObject(0);
-//                        String storedPassword = user.getString("password");
-//
-//                        // Check password
-//                        if (hashPassword(password).equals(storedPassword)) {
-//                            // Save user session
-//                            saveUserSession(user.getString("username"), email, user.getString("id"));
-//
-//                            runOnUiThread(() -> {
-//                                Toast.makeText(LoginActivity.this, "Login successful!", Toast.LENGTH_SHORT).show();
-//                                navigateToHome();
-//                            });
-//                        } else {
-//                            runOnUiThread(() -> Toast.makeText(LoginActivity.this, "Invalid password", Toast.LENGTH_SHORT).show());
-//                        }
-//                    } else {
-//                        runOnUiThread(() -> Toast.makeText(LoginActivity.this, "User not found", Toast.LENGTH_SHORT).show());
-//                    }
-//                } else {
-//                    Log.e(TAG, "Login Failed: " + response.message());
-//                    runOnUiThread(() -> Toast.makeText(LoginActivity.this, "Login failed: " + response.message(), Toast.LENGTH_SHORT).show());
-//                }
-//            } catch (Exception e) {
-//                Log.e(TAG, "Error during login: " + e.getMessage());
-//                runOnUiThread(() -> Toast.makeText(LoginActivity.this, "Error during login: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-//            }
-//        }).start();
-//    }
-//
+
 
     private void loginUser(String email, String password) {
         new Thread(() -> {
@@ -216,15 +185,9 @@ public class LoginActivity extends AppCompatActivity {
 
 
 
-//    private void saveUserSession(String username, String email, String userId) {
-//        SharedPreferences sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE);
-//        SharedPreferences.Editor editor = sharedPreferences.edit();
-//        editor.putBoolean("isLoggedIn", true);
-//        editor.putString("username", username);
-//        editor.putString("email", email);
-//        editor.putString("userId", userId); // Save the user ID
-//        editor.apply();
-//    }
+
+
+
 
 
     private void saveUserSession(String userId, String username, String email) {

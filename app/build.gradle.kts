@@ -51,6 +51,7 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
+    implementation(libs.jsoup)
     androidTestImplementation(libs.espresso.core)
 
     implementation(libs.gson)
@@ -60,6 +61,9 @@ dependencies {
     implementation(libs.osmdroid.android.v6111)
     implementation(libs.osmdroid.android.v6112)
     implementation(libs.okhttp.v493)
+    implementation(libs.jsoup)
+
+
 
 
 

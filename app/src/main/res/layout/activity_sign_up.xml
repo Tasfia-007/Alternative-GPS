@@ -50,14 +50,60 @@
         android:layout_marginBottom="10dp" />
 
     <!-- Password Input -->
-    <EditText
-        android:id="@+id/signup_password_input"
+    <!-- Password Input with Eye Toggle -->
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:hint="Password"
-        android:inputType="textPassword"
-        android:padding="10dp"
-        android:layout_marginBottom="10dp" />
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp">
+
+        <EditText
+            android:id="@+id/signup_password_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Password"
+            android:inputType="textPassword"
+            android:padding="10dp"
+            android:background="@drawable/rounded_edittext_bg"
+            android:layout_gravity="center" />
+
+        <ImageView
+            android:id="@+id/toggle_password_visibility"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/eye"
+            android:layout_gravity="end|center_vertical"
+            android:padding="8dp"
+            android:layout_marginEnd="10dp"
+            android:contentDescription="Toggle password visibility" />
+    </FrameLayout>
+
+    <!-- Confirm Password Input with Eye Toggle -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp">
+
+        <EditText
+            android:id="@+id/confirm_password_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Confirm Password"
+            android:inputType="textPassword"
+            android:padding="10dp"
+            android:background="@drawable/rounded_edittext_bg"
+            android:layout_gravity="center" />
+
+        <ImageView
+            android:id="@+id/toggle_confirm_password_visibility"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/eye"
+            android:layout_gravity="end|center_vertical"
+            android:padding="8dp"
+            android:layout_marginEnd="10dp"
+            android:contentDescription="Toggle confirm password visibility" />
+    </FrameLayout>
+
 
     <!-- Signup Button -->
     <Button

@@ -8,12 +8,14 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.Manifest;
 
@@ -52,11 +54,14 @@ public class SignUpActivity extends AppCompatActivity {
     private String imagePath; // Path
     private EditText nameInput, emailInput, passwordInput;
     private Button signUpButton;
+    private EditText confirmPasswordInput;
+    private ImageView togglePasswordVisibility, toggleConfirmPasswordVisibility;
 
     // Supabase configurations
     private static final String SUPABASE_URL = "https://kquvuygavkhsxvdpqyfn.supabase.co"; // Replace with your Supabase URL
     private static final String SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdXZ1eWdhdmtoc3h2ZHBxeWZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzcxMDQ4NjcsImV4cCI6MjA1MjY4MDg2N30.YVPKExfM-ZxzO9JvM9RQZQrBiyG1iT50fiwGUcvw8EI"; // Replace with your Supabase API Key
     private static final String SIGNUP_TABLE = "signup";
+
 
     private static final String TAG = "SignUpActivity"; // For logging
 
@@ -64,6 +69,7 @@ public class SignUpActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sign_up);
+        confirmPasswordInput = findViewById(R.id.confirm_password_input);
 
         // Initialize UI elements
         nameInput = findViewById(R.id.name_input);
@@ -79,6 +85,13 @@ public class SignUpActivity extends AppCompatActivity {
                 String name = nameInput.getText().toString().trim();
                 String email = emailInput.getText().toString().trim();
                 String password = passwordInput.getText().toString().trim();
+                String confirmPassword = confirmPasswordInput.getText().toString().trim();
+
+                // Check if passwords match
+                if (!password.equals(confirmPassword)) {
+                    Toast.makeText(SignUpActivity.this, "Passwords do not match", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
                 if (validateInput(name, email, password)) {
                     String hashedPassword = hashPassword(password);
@@ -96,6 +109,7 @@ public class SignUpActivity extends AppCompatActivity {
             }
         });
 
+
         // Image picker click listener
         appLogo.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -107,6 +121,49 @@ public class SignUpActivity extends AppCompatActivity {
                 }
             }
         });
+
+
+
+
+
+        TextView loginRedirect = findViewById(R.id.login_redirect);
+        loginRedirect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(SignUpActivity.this, LoginActivity.class);
+                startActivity(intent);
+                finish(); // Optional: closes the SignUpActivity
+            }
+        });
+
+
+        passwordInput = findViewById(R.id.signup_password_input);
+        confirmPasswordInput = findViewById(R.id.confirm_password_input);
+        togglePasswordVisibility = findViewById(R.id.toggle_password_visibility);
+        toggleConfirmPasswordVisibility = findViewById(R.id.toggle_confirm_password_visibility);
+        togglePasswordVisibility.setOnClickListener(v -> {
+            if (passwordInput.getInputType() == (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
+                passwordInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                togglePasswordVisibility.setImageResource(R.drawable.eyeopen);
+            } else {
+                passwordInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                togglePasswordVisibility.setImageResource(R.drawable.eye);
+            }
+            passwordInput.setSelection(passwordInput.getText().length());
+        });
+
+        toggleConfirmPasswordVisibility.setOnClickListener(v -> {
+            if (confirmPasswordInput.getInputType() == (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
+                confirmPasswordInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                toggleConfirmPasswordVisibility.setImageResource(R.drawable.eyeopen);
+            } else {
+                confirmPasswordInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                toggleConfirmPasswordVisibility.setImageResource(R.drawable.eye);
+            }
+            confirmPasswordInput.setSelection(confirmPasswordInput.getText().length());
+        });
+
+
     }
 
 
@@ -175,29 +232,29 @@ public class SignUpActivity extends AppCompatActivity {
         startActivityForResult(galleryIntent, GALLERY_REQUEST_CODE);
     }
 
-    private boolean validateInput(String name, String email, String password) {
-        if (TextUtils.isEmpty(name)) {
-            Toast.makeText(this, "Name is required", Toast.LENGTH_SHORT).show();
-            Log.e(TAG, "Validation failed: Name is empty");
-            return false;
-        }
-        if (TextUtils.isEmpty(email)) {
-            Toast.makeText(this, "Email is required", Toast.LENGTH_SHORT).show();
-            Log.e(TAG, "Validation failed: Email is empty");
-            return false;
-        }
-        if (TextUtils.isEmpty(password)) {
-            Toast.makeText(this, "Password is required", Toast.LENGTH_SHORT).show();
-            Log.e(TAG, "Validation failed: Password is empty");
-            return false;
-        }
-        if (password.length() < 6 || !password.matches(".*\\d.*")) {
-            Toast.makeText(this, "Password must be at least 6 characters long and contain a digit", Toast.LENGTH_SHORT).show();
-            Log.e(TAG, "Validation failed: Password too short or missing digit");
-            return false;
-        }
-        return true;
-    }
+//    private boolean validateInput(String name, String email, String password) {
+//        if (TextUtils.isEmpty(name)) {
+//            Toast.makeText(this, "Name is required", Toast.LENGTH_SHORT).show();
+//            Log.e(TAG, "Validation failed: Name is empty");
+//            return false;
+//        }
+//        if (TextUtils.isEmpty(email)) {
+//            Toast.makeText(this, "Email is required", Toast.LENGTH_SHORT).show();
+//            Log.e(TAG, "Validation failed: Email is empty");
+//            return false;
+//        }
+//        if (TextUtils.isEmpty(password)) {
+//            Toast.makeText(this, "Password is required", Toast.LENGTH_SHORT).show();
+//            Log.e(TAG, "Validation failed: Password is empty");
+//            return false;
+//        }
+//        if (password.length() < 6 || !password.matches(".*\\d.*")) {
+//            Toast.makeText(this, "Password must be at least 6 characters long and contain a digit", Toast.LENGTH_SHORT).show();
+//            Log.e(TAG, "Validation failed: Password too short or missing digit");
+//            return false;
+//        }
+//        return true;
+//    }
 
     private String hashPassword(String password) {
         try {
@@ -249,11 +306,24 @@ public class SignUpActivity extends AppCompatActivity {
                 if (response.isSuccessful()) {
                     String responseBody = response.body() != null ? response.body().string() : "No Response Body";
                     Log.d(TAG, "Signup Success: " + responseBody);
-                    runOnUiThread(() -> Toast.makeText(SignUpActivity.this, "Sign up successful!", Toast.LENGTH_SHORT).show());
+                    runOnUiThread(() -> {
+                        Toast.makeText(SignUpActivity.this, "Sign up successful!", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(SignUpActivity.this, LoginActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(intent);
+                        finish();
+                    });
                 } else {
                     String errorMessage = response.body() != null ? response.body().string() : "Unknown Error";
                     Log.e(TAG, "Signup Failed: " + errorMessage);
-                    runOnUiThread(() -> Toast.makeText(SignUpActivity.this, "Signup failed: " + errorMessage, Toast.LENGTH_SHORT).show());
+
+                    if (errorMessage.contains("duplicate key value violates unique constraint")) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(SignUpActivity.this, "Username taken. Please choose a different one.", Toast.LENGTH_LONG).show();
+                        });
+                    } else {
+                        runOnUiThread(() -> Toast.makeText(SignUpActivity.this, "Signup failed: " + errorMessage, Toast.LENGTH_SHORT).show());
+                    }
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Signup request failed: " + e.getMessage());
@@ -261,6 +331,31 @@ public class SignUpActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }).start();
+    }
+
+    private boolean validateInput(String name, String email, String password) {
+        if (TextUtils.isEmpty(name)) {
+            Toast.makeText(this, "Name is required", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Validation failed: Name is empty");
+            return false;
+        }
+        if (TextUtils.isEmpty(email)) {
+            Toast.makeText(this, "Email is required", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Validation failed: Email is empty");
+            return false;
+        }
+        if (TextUtils.isEmpty(password)) {
+            Toast.makeText(this, "Password is required", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Validation failed: Password is empty");
+            return false;
+        }
+        if (password.length() < 6 || !password.matches(".*\\d.*")) {
+            // Display a toast with a message for password validation failure
+            Toast.makeText(this, "Password must be at least 6 characters long and contain a digit", Toast.LENGTH_LONG).show();
+            Log.e(TAG, "Validation failed: Password too short or missing digit");
+            return false;
+        }
+        return true;
     }
 
 
@@ -378,59 +473,6 @@ public class SignUpActivity extends AppCompatActivity {
     }
 
 
-
-
-//    private void retryUpload(File imageFile, int retries) {
-//        if (retries <= 0) {
-//            Log.e(TAG, "Upload failed after retries.");
-//            runOnUiThread(() -> Toast.makeText(this, "Image upload failed after retries.", Toast.LENGTH_SHORT).show());
-//            return;
-//        }
-//
-//        new Thread(() -> {
-//            try {
-//                OkHttpClient client = new OkHttpClient.Builder()
-//                        .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
-//                        .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
-//                        .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
-//                        .build();
-//
-//                RequestBody fileBody = RequestBody.create(imageFile, MediaType.parse("image/jpeg"));
-//                String uniqueFileName = UUID.randomUUID().toString() + ".jpg";
-//                RequestBody requestBody = new MultipartBody.Builder()
-//                        .setType(MultipartBody.FORM)
-//                        .addFormDataPart("file", uniqueFileName, fileBody)
-//                        .build();
-//
-//                String bucketName = "user-images";
-//                String uploadUrl = SUPABASE_URL + "/storage/v1/object/" + bucketName + "/" + uniqueFileName;
-//
-//                Request request = new Request.Builder()
-//                        .url(uploadUrl)
-//                        .addHeader("Authorization", "Bearer " + SUPABASE_KEY)
-//                        .post(requestBody)
-//                        .build();
-//
-//                Response response = client.newCall(request).execute();
-//
-//                if (response.isSuccessful()) {
-//                    String imageUrl = SUPABASE_URL + "/storage/v1/object/public/" + bucketName + "/" + uniqueFileName;
-//                    Log.d(TAG, "Image Upload Success: " + imageUrl);
-//                    saveToSupabase(nameInput.getText().toString().trim(),
-//                            emailInput.getText().toString().trim(),
-//                            hashPassword(passwordInput.getText().toString().trim()),
-//                            imageUrl);
-//                    runOnUiThread(() -> Toast.makeText(SignUpActivity.this, "Image uploaded successfully!", Toast.LENGTH_SHORT).show());
-//                } else {
-//                    Log.e(TAG, "Upload failed: " + response.message());
-//                    retryUpload(imageFile, retries - 1); // Retry on failure
-//                }
-//            } catch (Exception e) {
-//                Log.e(TAG, "Error during upload: " + e.getMessage());
-//                retryUpload(imageFile, retries - 1); // Retry on exception
-//            }
-//        }).start();
-//    }
 
 
 
