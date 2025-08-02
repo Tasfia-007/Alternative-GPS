@@ -1,312 +1,3 @@
-//package com.example.myapplication;
-//
-//import android.os.Bundle;
-//import android.util.Log;
-//import android.view.View;
-//import android.widget.AdapterView;
-//import android.widget.Button;
-//import android.widget.EditText;
-//import android.widget.RelativeLayout;
-//import android.widget.Spinner;
-//import android.widget.TextView;
-//import android.widget.Toast;
-//
-//import androidx.appcompat.app.AppCompatActivity;
-//
-//import org.osmdroid.api.IMapController;
-//import org.osmdroid.config.Configuration;
-//import org.osmdroid.util.GeoPoint;
-//import org.osmdroid.views.MapView;
-//import org.osmdroid.views.overlay.Marker;
-//import org.osmdroid.views.overlay.Polyline;
-//
-//import java.util.ArrayList;
-//import java.util.List;
-//
-//import okhttp3.OkHttpClient;
-//import okhttp3.Request;
-//import okhttp3.Response;
-//
-//import org.json.JSONArray;
-//import org.json.JSONObject;
-//
-//public class RoutingActivity extends AppCompatActivity {
-//
-//    private EditText fromLocation;
-//    private EditText toLocation;
-//    private Button getRouteButton;
-//    private MapView mapView;
-//
-//    private View routeInfoContainer;
-//    private TextView bestRouteTime;
-//    private TextView alternativeRoutes;
-//
-//
-//
-//    @Override
-//    protected void onCreate(Bundle savedInstanceState) {
-//        super.onCreate(savedInstanceState);
-//        setContentView(R.layout.activity_routing);
-//
-//        // Initialize Views
-//        fromLocation = findViewById(R.id.from_location);
-//        toLocation = findViewById(R.id.to_location);
-//        getRouteButton = findViewById(R.id.get_route_button);
-//        mapView = findViewById(R.id.mapview);
-//        Spinner travelModeSpinner = findViewById(R.id.travel_mode_spinner);  // Initialize Spinner
-//
-//        // Configure MapView
-//        Configuration.getInstance().setUserAgentValue(getApplicationContext().getPackageName());
-//        mapView.setTileSource(org.osmdroid.tileprovider.tilesource.TileSourceFactory.MAPNIK);
-//        mapView.setMultiTouchControls(true);
-//        IMapController mapController = mapView.getController();
-//        mapController.setZoom(10.0);
-//        mapController.setCenter(new GeoPoint(23.8103, 90.4125)); // Default to Dhaka
-//
-//        // Default mode is "driving"
-//        final String[] selectedMode = {"driving"};
-//
-//        // Listen for Spinner selection
-//        travelModeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-//            @Override
-//            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-//                selectedMode[0] = parentView.getItemAtPosition(position).toString().toLowerCase(); // Update mode
-//            }
-//
-//            @Override
-//            public void onNothingSelected(AdapterView<?> parentView) {
-//                selectedMode[0] = "driving"; // Default to driving
-//            }
-//        });
-//
-//
-//        getRouteButton.setOnClickListener(v -> {
-//            String from = fromLocation.getText().toString().trim();
-//            String to = toLocation.getText().toString().trim();
-//
-//            if (from.isEmpty() || to.isEmpty()) {
-//                Toast.makeText(this, "Please enter both locations", Toast.LENGTH_SHORT).show();
-//                return;
-//            }
-//
-//            // Pass selectedMode to fetchCoordinatesAndDisplayRoute()
-//            fetchCoordinatesAndDisplayRoute(from, to, selectedMode[0]);
-//        });
-//
-//
-//
-//
-//
-//        // New elements for route information
-//        routeInfoContainer = findViewById(R.id.route_info_container);
-//        bestRouteTime = findViewById(R.id.best_route_time);
-//        alternativeRoutes = findViewById(R.id.alternative_routes);
-//
-//        // Hide the info box initially
-//        routeInfoContainer.setVisibility(View.GONE);
-//    }
-//
-//
-//
-//    private void fetchCoordinatesAndDisplayRoute(String from, String to, String mode) {
-//        new Thread(() -> {
-//            try {
-//                GeoPoint fromPoint = geocodeLocation(from);
-//                GeoPoint toPoint = geocodeLocation(to);
-//
-//                if (fromPoint != null && toPoint != null) {
-//                    fetchRoute(fromPoint, toPoint, mode); // Pass selected mode
-//                } else {
-//                    runOnUiThread(() -> Toast.makeText(this, "Failed to fetch coordinates.", Toast.LENGTH_SHORT).show());
-//                }
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//                runOnUiThread(() -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-//            }
-//        }).start();
-//    }
-//
-//
-//    private GeoPoint geocodeLocation(String location) {
-//        try {
-//            String url = "https://nominatim.openstreetmap.org/search?q=" + location
-//                    + "&format=json&addressdetails=1&countrycodes=bd"; // Restrict to Bangladesh
-//            OkHttpClient client = new OkHttpClient();
-//            Request request = new Request.Builder().url(url).build();
-//            Response response = client.newCall(request).execute();
-//
-//            if (response.isSuccessful() && response.body() != null) {
-//                JSONArray jsonArray = new JSONArray(response.body().string());
-//                if (jsonArray.length() > 0) {
-//                    JSONObject jsonObject = jsonArray.getJSONObject(0);
-//                    double lat = jsonObject.getDouble("lat");
-//                    double lon = jsonObject.getDouble("lon");
-//                    return new GeoPoint(lat, lon);
-//                }
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        return null; // Return null if geocoding fails
-//    }
-//
-//
-//
-//
-////    private void fetchRoute(GeoPoint fromPoint, GeoPoint toPoint, String mode) {
-////        runOnUiThread(() -> {
-////            mapView.getOverlays().clear();
-////            mapView.invalidate();
-////        });
-////
-////        // Use OSRM API with the selected transport mode
-////        String osrmUrl = "http://router.project-osrm.org/route/v1/" + mode + "/" +
-////                fromPoint.getLongitude() + "," + fromPoint.getLatitude() + ";" +
-////                toPoint.getLongitude() + "," + toPoint.getLatitude() +
-////                "?overview=full&geometries=geojson&alternatives=true";
-////
-////        new Thread(() -> {
-////            try {
-////                OkHttpClient client = new OkHttpClient();
-////                Request request = new Request.Builder().url(osrmUrl).build();
-////                Response response = client.newCall(request).execute();
-////
-////                if (response.isSuccessful() && response.body() != null) {
-////                    String jsonResponse = response.body().string();
-////                    JSONObject jsonObject = new JSONObject(jsonResponse);
-////                    JSONArray routes = jsonObject.getJSONArray("routes");
-////
-////                    if (routes.length() > 0) {
-////                        runOnUiThread(() -> displayRoute(jsonResponse, fromPoint, toPoint));
-////                    }
-////                }
-////            } catch (Exception e) {
-////                e.printStackTrace();
-////                runOnUiThread(() -> Toast.makeText(this, "Error fetching route: " + e.getMessage(), Toast.LENGTH_LONG).show());
-////            }
-////        }).start();
-////    }
-////
-//
-//
-//    private void fetchRoute(GeoPoint fromPoint, GeoPoint toPoint, String mode) {
-//        runOnUiThread(() -> {
-//            mapView.getOverlays().clear();
-//            mapView.invalidate();
-//        });
-//
-//        // Use OSRM API with the selected transport mode
-//        String osrmUrl = "http://router.project-osrm.org/route/v1/" + mode + "/" +
-//                fromPoint.getLongitude() + "," + fromPoint.getLatitude() + ";" +
-//                toPoint.getLongitude() + "," + toPoint.getLatitude() +
-//                "?overview=full&geometries=geojson&alternatives=true&steps=true"; // Add 'steps=true' to get detailed route information
-//
-//        new Thread(() -> {
-//            try {
-//                OkHttpClient client = new OkHttpClient();
-//                Request request = new Request.Builder().url(osrmUrl).build();
-//                Response response = client.newCall(request).execute();
-//
-//                if (response.isSuccessful() && response.body() != null) {
-//                    String jsonResponse = response.body().string();
-//                    JSONObject jsonObject = new JSONObject(jsonResponse);
-//                    JSONArray routes = jsonObject.getJSONArray("routes");
-//
-//                    if (routes.length() > 0) {
-//                        runOnUiThread(() -> displayRoute(jsonResponse, fromPoint, toPoint));
-//                    }
-//                }
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//                runOnUiThread(() -> Toast.makeText(this, "Error fetching route: " + e.getMessage(), Toast.LENGTH_LONG).show());
-//            }
-//        }).start();
-//    }
-//
-//
-//    private void displayRoute(String jsonResponse, GeoPoint fromPoint, GeoPoint toPoint) {
-//        try {
-//            JSONObject jsonObject = new JSONObject(jsonResponse);
-//            JSONArray routes = jsonObject.getJSONArray("routes");
-//
-//            if (routes.length() == 0) {
-//                Toast.makeText(this, "No routes found.", Toast.LENGTH_SHORT).show();
-//                return;
-//            }
-//
-//            int totalAlternatives = 0;
-//
-//            // Loop through each route
-//            for (int i = 0; i < routes.length(); i++) {
-//                JSONObject route = routes.getJSONObject(i);
-//                JSONArray coordinates = route.getJSONObject("geometry").getJSONArray("coordinates");
-//
-//                List<GeoPoint> geoPoints = new ArrayList<>();
-//                for (int j = 0; j < coordinates.length(); j++) {
-//                    JSONArray coord = coordinates.getJSONArray(j);
-//                    double lon = coord.getDouble(0);
-//                    double lat = coord.getDouble(1);
-//                    geoPoints.add(new GeoPoint(lat, lon));
-//                }
-//
-//                // Create the route polyline
-//                Polyline polyline = new Polyline();
-//                polyline.setPoints(geoPoints);
-//
-//                if (i == 0) {
-//                    // Main route - Red Color
-//                    polyline.setColor(getResources().getColor(android.R.color.holo_red_dark));
-//                    polyline.setWidth(8.0f);
-//                } else {
-//                    // Alternative routes - Blue or Violet Color
-//                    polyline.setColor(getResources().getColor(android.R.color.holo_blue_dark)); // Blue
-//                    polyline.setWidth(6.0f);
-//                    polyline.getPaint().setAlpha(150); // Semi-transparent for alternatives
-//                    totalAlternatives++;
-//                }
-//
-//                // Add the polyline to the map overlays
-//                mapView.getOverlays().add(polyline);
-//
-//                // 🟢 **Attach Time Label Marker Above the Start Point**
-//                Marker timeMarker = new Marker(mapView);
-//                GeoPoint timeMarkerPosition = new GeoPoint(fromPoint.getLatitude() + 0.0005, fromPoint.getLongitude()); // Slightly above start
-//                timeMarker.setPosition(timeMarkerPosition);
-//                timeMarker.setTitle(route.getJSONArray("legs").getJSONObject(0).getDouble("duration") / 60 + " min"); // Show estimated time
-//                timeMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-//                timeMarker.setTextLabelFontSize(24); // Increase text size
-//                timeMarker.setTextLabelBackgroundColor(getResources().getColor(android.R.color.white)); // White background
-//                timeMarker.setTextLabelForegroundColor(getResources().getColor(android.R.color.black)); // Black text
-//
-//                mapView.getOverlays().add(timeMarker);
-//            }
-//
-//            // Add Start Marker
-//            Marker startMarker = new Marker(mapView);
-//            startMarker.setPosition(fromPoint);
-//            startMarker.setTitle("Start: " + fromLocation.getText().toString());
-//            startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-//            mapView.getOverlays().add(startMarker);
-//
-//            // Add End Marker
-//            Marker endMarker = new Marker(mapView);
-//            endMarker.setPosition(toPoint);
-//            endMarker.setTitle("End: " + toLocation.getText().toString());
-//            endMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-//            mapView.getOverlays().add(endMarker);
-//
-//            mapView.invalidate(); // Refresh the map to show new routes
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            Toast.makeText(this, "Error displaying routes: " + e.getMessage(), Toast.LENGTH_LONG).show();
-//        }
-//    }
-//
-//
-//
-//}
-
 
 
 package com.example.myapplication;
@@ -382,9 +73,12 @@ public class RoutingActivity extends AppCompatActivity {
     private TextView bestRouteTime; // Class-level field
     private TextView alternativeRoutes; // Class-level field
     private MapView mapView;
+    int skippedCount = 0;
     private FusedLocationProviderClient fusedLocationClient;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
     private GeoPoint currentLocation;
+    private Map<Integer, String[]> visibilityTimes = new HashMap<>();
+
     private String[] selectedMode = {"driving"}; // Default to driving
 
     private List<Polygon> savedPolygons = new ArrayList<>(); // List to store saved polygons
@@ -886,7 +580,7 @@ public class RoutingActivity extends AppCompatActivity {
         }
 
         // Map to quickly lookup start/end times by polygon ID
-        Map<Integer, String[]> visibilityTimes = new HashMap<>();
+        visibilityTimes = new HashMap<>();
 
         for (int i = 0; i < visibilityArray.length(); i++) {
             JSONObject visibilityObject = visibilityArray.getJSONObject(i);
@@ -986,7 +680,25 @@ public class RoutingActivity extends AppCompatActivity {
         dialog.setOnDismissListener(d -> handler.removeCallbacks(runnable));
     }
 
-
+    private boolean isPolygonBlockedNow(int polygonId) {
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+        String nowStr = sdf.format(new Date());
+        try {
+            Date now = sdf.parse(nowStr);
+            if (visibilityTimes.containsKey(polygonId)) {
+                String[] times = visibilityTimes.get(polygonId);
+                Date start = sdf.parse(times[0]);
+                Date end = sdf.parse(times[1]);
+                if (now.compareTo(start) >= 0 && now.compareTo(end) <= 0) {
+                    return true;  // currently blocked
+                }
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        Log.d("DEBUG", "Checking polygon " + polygonId + ", visibilityTimes size: " + visibilityTimes.size());
+        return false;
+    }
 
 
     private void fetchCoordinatesAndDisplayRoute(String from, String to, String mode) {
@@ -1041,7 +753,6 @@ public class RoutingActivity extends AppCompatActivity {
     }
 
     private void fetchRoute(GeoPoint fromPoint, GeoPoint toPoint, String mode) {
-
         String vehicle;
         switch (mode.toLowerCase()) {
             case "driving":
@@ -1055,13 +766,15 @@ public class RoutingActivity extends AppCompatActivity {
                 break;
             default:
                 vehicle = "car";
-                Log.d(TAG, "Fetching route from: " + fromPoint.getLatitude() + "," + fromPoint.getLongitude() +
-                        " to: " + toPoint.getLatitude() + "," + toPoint.getLongitude() + " with mode: " + mode);
                 Log.w(TAG, "Unknown mode: " + mode + ", defaulting to car");
         }
 
-        String graphHopperApiKey = "d20cbf9f-8c4d-4f87-94b9-09203bcba7cb"; // Replace with your API key
+        Log.d(TAG, "Fetching route from: " + fromPoint.getLatitude() + "," + fromPoint.getLongitude() +
+                " to: " + toPoint.getLatitude() + "," + toPoint.getLongitude() + " with mode: " + mode);
 
+        String graphHopperApiKey = "d20cbf9f-8c4d-4f87-94b9-09203bcba7cb";
+
+        // ✅ Working GraphHopper URL for alternative routes
         String graphHopperUrl = "https://graphhopper.com/api/1/route?" +
                 "point=" + fromPoint.getLatitude() + "," + fromPoint.getLongitude() +
                 "&point=" + toPoint.getLatitude() + "," + toPoint.getLongitude() +
@@ -1098,15 +811,23 @@ public class RoutingActivity extends AppCompatActivity {
 
                 if (response.isSuccessful() && response.body() != null) {
                     String jsonResponse = response.body().string();
-                    Log.d(TAG, "GraphHopper response: " + jsonResponse);
+                    Log.d(TAG, "GraphHopper full response: " + jsonResponse);
 
                     JSONObject jsonObject = new JSONObject(jsonResponse);
+
+                    // ✅ Check if paths exist and log count
+                    if (!jsonObject.has("paths")) {
+                        Log.e(TAG, "No 'paths' key in response");
+                        runOnUiThread(() -> Toast.makeText(this, "Invalid response format", Toast.LENGTH_SHORT).show());
+                        return;
+                    }
+
                     JSONArray paths = jsonObject.getJSONArray("paths");
+                    Log.d(TAG, "Number of paths received: " + paths.length());
 
                     if (paths.length() > 0) {
-                        List<String> routeResponses = new ArrayList<>();
-                        routeResponses.add(jsonResponse);
-
+                        // ✅ Create filtered JSON response with only valid routes
+                        List<String> validRouteResponses = new ArrayList<>();
                         List<RouteInfo> routeInfoList = new ArrayList<>();
                         int[] colors = new int[]{
                                 Color.argb(150, 255, 0, 0),
@@ -1116,16 +837,102 @@ public class RoutingActivity extends AppCompatActivity {
                                 Color.argb(150, 255, 0, 255)
                         };
 
+                        int skippedCount = 0;
+                        int validRouteCount = 0;
+
+                        // ✅ Build new JSON with valid routes only
+                        JSONObject filteredResponse = new JSONObject();
+                        JSONArray validPaths = new JSONArray();
+
                         for (int i = 0; i < paths.length() && i < 5; i++) {
                             JSONObject path = paths.getJSONObject(i);
+                            String encodedPolyline = path.getString("points");
+                            List<GeoPoint> geoPoints = decodePolyline(encodedPolyline);
+                            boolean isBlocked = false;
+
+                            // ✅ Check for water blockage
+                            if (geoPoints != null && !geoPoints.isEmpty()) {
+                                for (GeoPoint point : geoPoints) {
+                                    for (int j = 0; j < savedPolygons.size(); j++) {
+                                        Polygon polygon = savedPolygons.get(j);
+                                        List<GeoPoint> polygonPoints = polygon.getActualPoints();
+
+                                        int intersectCount = 0;
+                                        for (int k = 0; k < polygonPoints.size() - 1; k++) {
+                                            double lat1 = polygonPoints.get(k).getLatitude();
+                                            double lon1 = polygonPoints.get(k).getLongitude();
+                                            double lat2 = polygonPoints.get(k + 1).getLatitude();
+                                            double lon2 = polygonPoints.get(k + 1).getLongitude();
+                                            double lat = point.getLatitude();
+                                            double lon = point.getLongitude();
+
+                                            if (((lat1 > lat) != (lat2 > lat)) &&
+                                                    (lon < (lon2 - lon1) * (lat - lat1) / (lat2 - lat1) + lon1)) {
+                                                intersectCount++;
+                                            }
+                                        }
+
+                                        boolean pointInside = (intersectCount % 2 == 1);
+                                        if (pointInside) {
+                                            int polygonId = polygonIds.get(j);
+                                            if (isPolygonBlockedNow(polygonId)) {
+                                                isBlocked = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (isBlocked) break;
+                                }
+                            }
+
+                            if (isBlocked) {
+                                Log.d(TAG, "🚫 Skipping route " + (i + 1) + " due to polygon water blockage");
+                                skippedCount++;
+                                continue;
+                            }
+
+                            // ✅ Route is valid, add to filtered response
+                            validPaths.put(path);
                             double distance = path.getDouble("distance") / 1000;
                             double duration = path.getDouble("time") / 1000 / 60;
-                            String colorName = getColorName(colors[i]);
+                            String colorName = getColorName(colors[validRouteCount]);
                             routeInfoList.add(new RouteInfo(colorName, distance, duration));
-                            Log.d(TAG, "Route " + (i + 1) + ": Mode=" + vehicle + ", Distance=" + distance + "km, Duration=" + duration + "min");
+
+                            Log.d(TAG, "✅ Valid Route " + (validRouteCount + 1) + ": Mode=" + vehicle +
+                                    ", Distance=" + distance + "km, Duration=" + duration + "min");
+                            validRouteCount++;
                         }
 
-                        runOnUiThread(() -> displayRoute(routeResponses, fromPoint, toPoint, routeInfoList));
+                        // ✅ Create filtered JSON response
+                        try {
+                            filteredResponse.put("paths", validPaths);
+                            if (jsonObject.has("info")) {
+                                filteredResponse.put("info", jsonObject.getJSONObject("info"));
+                            }
+                            validRouteResponses.add(filteredResponse.toString());
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error creating filtered response: " + e.getMessage());
+                            validRouteResponses.add(jsonResponse); // Fallback to original
+                        }
+
+                        final int finalSkippedCount = skippedCount;
+                        final int finalValidRouteCount = validRouteCount;
+
+                        runOnUiThread(() -> {
+                            if (finalValidRouteCount > 0) {
+                                displayRoute(validRouteResponses, fromPoint, toPoint, routeInfoList);
+                                Log.d(TAG, "Displaying " + finalValidRouteCount + " valid route(s)");
+
+                                if (finalSkippedCount > 0) {
+                                    Toast.makeText(this, "✅ " + finalValidRouteCount + " route(s) found, 🚫 " +
+                                            finalSkippedCount + " skipped due to water blockage", Toast.LENGTH_LONG).show();
+                                } else {
+                                    Toast.makeText(this, "✅ " + finalValidRouteCount + " route(s) found", Toast.LENGTH_SHORT).show();
+                                }
+                            } else {
+                                Toast.makeText(this, "🚫 All routes blocked by water. No alternative routes available.", Toast.LENGTH_LONG).show();
+                            }
+                        });
                     } else {
                         runOnUiThread(() -> Toast.makeText(this, "No routes found.", Toast.LENGTH_SHORT).show());
                         Log.e(TAG, "No paths found in GraphHopper response.");
@@ -1136,7 +943,7 @@ public class RoutingActivity extends AppCompatActivity {
                     runOnUiThread(() -> Toast.makeText(this, "Failed to fetch route: " + response.message(), Toast.LENGTH_SHORT).show());
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Error fetching route: " + e.getMessage());
+                Log.e(TAG, "Error fetching route: " + e.getMessage(), e);
                 runOnUiThread(() -> Toast.makeText(this, "Error fetching route: " + e.getMessage(), Toast.LENGTH_SHORT).show());
             } finally {
                 runOnUiThread(() -> {
@@ -1148,6 +955,9 @@ public class RoutingActivity extends AppCompatActivity {
             }
         }).start();
     }
+
+
+
     private static class RouteInfo {
         String colorName;
         double distance;
@@ -1420,12 +1230,6 @@ public class RoutingActivity extends AppCompatActivity {
             Log.e("RoutingActivity", "Error reading CSV from assets", e);
         }
     }
-
-
-
-
-
-
 
 
 }
