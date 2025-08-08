@@ -2,14 +2,16 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- Background Image -->
     <ImageView
         android:id="@+id/bg_profile_map"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="@drawable/images1"
+        android:src="@drawable/pro"
         android:scaleType="centerCrop"
         android:alpha="0.7" />
 
+    <!-- Scrollable Profile Section -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -21,91 +23,129 @@
             android:padding="20dp"
             android:gravity="center_horizontal">
 
+            <!-- Profile Picture -->
             <ImageView
                 android:id="@+id/profile_picture"
                 android:layout_width="180dp"
                 android:layout_height="180dp"
                 android:src="@drawable/baseline_account_circle_24"
                 android:layout_marginTop="40dp"
-                android:layout_marginBottom="20dp"/>
+                android:layout_marginBottom="20dp" />
 
-            <TextView
+            <!-- Name Section -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Name"
-                android:textSize="14sp"
-                android:textColor="#FFFFFF"
-                android:layout_marginBottom="4dp"/>
+                android:orientation="vertical"
+                android:background="@drawable/rounded_box"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp">
 
-            <TextView
-                android:id="@+id/username_display"
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Name"
+                    android:textSize="14sp"
+                    android:textColor="#009688"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/username_display"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="John Doe"
+                    android:textSize="16sp"
+                    android:textColor="#0C645C"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Email Section -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="John Doe"
-                android:textSize="16sp"
-                android:textColor="#FFFFFF"
-                android:textStyle="bold"
-                android:layout_marginBottom="20dp"/>
+                android:orientation="vertical"
+                android:background="@drawable/rounded_box"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp">
 
-            <TextView
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Email"
+                    android:textSize="14sp"
+                    android:textColor="#009688"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/email_display"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="johndoe@example.com"
+                    android:textSize="16sp"
+                    android:textColor="#0C645C" />
+            </LinearLayout>
+
+            <!-- Emergency Contact Name -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Email"
-                android:textSize="14sp"
-                android:textColor="#FFFFFF"
-                android:layout_marginBottom="4dp"/>
+                android:orientation="vertical"
+                android:background="@drawable/rounded_box"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp">
 
-            <TextView
-                android:id="@+id/email_display"
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Emergency Contact Name"
+                    android:textSize="14sp"
+                    android:textColor="#009688"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/emergency_contact_name_display"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Jane Doe"
+                    android:textSize="16sp"
+                    android:textColor="#0C645C" />
+            </LinearLayout>
+
+            <!-- Emergency Contact Number -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="johndoe@example.com"
-                android:textSize="16sp"
-                android:textColor="#FFFFFF"
-                android:layout_marginBottom="20dp"/>
+                android:orientation="vertical"
+                android:background="@drawable/rounded_box"
+                android:padding="12dp"
+                android:layout_marginBottom="30dp">
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Emergency Contact Name"
-                android:textSize="14sp"
-                android:textColor="#FFFFFF"
-                android:layout_marginBottom="4dp"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Emergency Contact Number"
+                    android:textSize="14sp"
+                    android:textColor="#009688"
+                    android:layout_marginBottom="4dp" />
 
-            <TextView
-                android:id="@+id/emergency_contact_name_display"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Jane Doe"
-                android:textSize="16sp"
-                android:textColor="#FFFFFF"
-                android:layout_marginBottom="20dp"/>
+                <TextView
+                    android:id="@+id/emergency_contact_number_display"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="+1 234 567 890"
+                    android:textSize="16sp"
+                    android:textColor="#0C645C" />
+            </LinearLayout>
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Emergency Contact Number"
-                android:textSize="14sp"
-                android:textColor="#FFFFFF"
-                android:layout_marginBottom="4dp"/>
-
-            <TextView
-                android:id="@+id/emergency_contact_number_display"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="+1 234 567 890"
-                android:textSize="16sp"
-                android:textColor="#FFFFFF"
-                android:layout_marginBottom="30dp"/>
-
+            <!-- Edit Button -->
             <Button
                 android:id="@+id/edit_profile_button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Edit Profile"
-                android:backgroundTint="#FF9800"
+                android:backgroundTint="#009688"
                 android:textColor="#FFFFFF"
-                android:layout_marginBottom="10dp"/>
+                android:layout_marginBottom="10dp" />
         </LinearLayout>
     </ScrollView>
 </FrameLayout>

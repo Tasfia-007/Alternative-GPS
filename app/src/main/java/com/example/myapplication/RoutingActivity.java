@@ -406,51 +406,58 @@ public class RoutingActivity extends AppCompatActivity {
         mapView.invalidate();
     }
 
-    private String getLiveMarkerInfo(int polygonId, float waterLevel) {
-        StringBuilder infoBuilder = new StringBuilder();
-        String nowTime = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
-
-        infoBuilder.append("⏰ Current Time: ").append(nowTime).append("\n");
-
-        // Check if polygon is currently active
-        for (int i = 0; i < polygonIds.size(); i++) {
-            if (polygonIds.get(i) == polygonId) {
-                // Assume you already have visibility data loaded
-                // You can store visibilityStartTimes and visibilityEndTimes in two separate lists if needed
-                // For now just example:
-                // Example only! You need real start/end times based on your visibility dataset
-                String startTime = "10:00"; // Placeholder
-                String endTime = "15:00";   // Placeholder
-
-                try {
-                    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
-                    Date now = sdf.parse(nowTime.substring(0, 5));
-                    Date start = sdf.parse(startTime);
-                    Date end = sdf.parse(endTime);
-
-                    if (now != null && start != null && end != null) {
-                        if (now.compareTo(start) >= 0 && now.compareTo(end) <= 0) {
-                            infoBuilder.append("✅ This area is water blocked\n");
-                            infoBuilder.append("Water Level: ").append(getWaterLevelDescription(waterLevel)).append("\n");
-                        } else {
-                            infoBuilder.append("⚠️ Warning: Water Blocked from ")
-                                    .append(startTime)
-                                    .append(" to ")
-                                    .append(endTime)
-                                    .append("\nWater Level: ")
-                                    .append(getWaterLevelDescription(waterLevel))
-                                    .append("\n");
-                        }
-                    }
-                } catch (ParseException e) {
-                    infoBuilder.append("Error parsing time");
-                }
-                break;
-            }
-        }
-
-        return infoBuilder.toString();
-    }
+//    private String getLiveMarkerInfo(int polygonId, float waterLevel) {
+//        StringBuilder infoBuilder = new StringBuilder();
+//
+//        // Current time already in AM/PM
+//        String nowTimeFormatted = new SimpleDateFormat("hh:mm:ss a", Locale.getDefault()).format(new Date());
+//        infoBuilder.append("⏰ Current Time: ").append(nowTimeFormatted).append("\n");
+//
+//        for (int i = 0; i < polygonIds.size(); i++) {
+//            if (polygonIds.get(i) == polygonId) {
+//                String startTime = "10:00"; // still in 24h format (from DB)
+//                String endTime   = "15:00";
+//
+//                try {
+//                    SimpleDateFormat inputFormat  = new SimpleDateFormat("HH:mm", Locale.getDefault());
+//                    SimpleDateFormat outputFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+//
+//                    Date startDate = inputFormat.parse(startTime);
+//                    Date endDate   = inputFormat.parse(endTime);
+//
+//                    String startFormatted = (startDate != null) ? outputFormat.format(startDate) : startTime;
+//                    String endFormatted   = (endDate != null) ? outputFormat.format(endDate) : endTime;
+//
+//                    // Use current time (in 24h) to compare
+//                    String now24 = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
+//                    Date now = inputFormat.parse(now24);
+//
+//                    if (now != null && startDate != null && endDate != null) {
+//                        if (now.compareTo(startDate) >= 0 && now.compareTo(endDate) <= 0) {
+//                            infoBuilder.append("✅ This area is water blocked\n");
+//                            infoBuilder.append("Water Level: ")
+//                                    .append(getWaterLevelDescription(waterLevel))
+//                                    .append("\n");
+//                        } else {
+//                            infoBuilder.append("⚠️ Warning: Water Blocked from ")
+//                                    .append(startFormatted)
+//                                    .append(" to ")
+//                                    .append(endFormatted)
+//                                    .append("\nWater Level: ")
+//                                    .append(getWaterLevelDescription(waterLevel))
+//                                    .append("\n");
+//                        }
+//                    }
+//                } catch (ParseException e) {
+//                    infoBuilder.append("Error parsing time");
+//                }
+//                break;
+//            }
+//        }
+//
+//        return infoBuilder.toString();
+//    }
+//
 
 
     private String getWaterLevelDescription(float waterLevel) {
@@ -495,22 +502,40 @@ public class RoutingActivity extends AppCompatActivity {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                String currentTime = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
+                String currentTime = new SimpleDateFormat("hh:mm:ss a", Locale.getDefault()).format(new Date());
                 clockView.setText("⏰ Current Time: " + currentTime);
 
                 try {
-                    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
-                    Date now = sdf.parse(currentTime.substring(0, 5));
-                    Date start = sdf.parse(startTime);
-                    Date end = sdf.parse(endTime);
+                    // Use SimpleDateFormat to convert to AM/PM format for startTime and endTime
+                    SimpleDateFormat inputFormat = new SimpleDateFormat("HH:mm", Locale.getDefault()); // 24-hour format
+                    SimpleDateFormat outputFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault()); // AM/PM format
 
-                    if (now != null && start != null && end != null) {
-                        if (now.compareTo(start) >= 0 && now.compareTo(end) <= 0) {
+                    Date startDate = inputFormat.parse(startTime);
+                    Date endDate = inputFormat.parse(endTime);
+
+                    // Convert startTime and endTime to AM/PM format
+                    String startFormatted = (startDate != null) ? outputFormat.format(startDate) : startTime;
+                    String endFormatted = (endDate != null) ? outputFormat.format(endDate) : endTime;
+
+                    // Get current time in 24-hour format for comparison
+                    String now24 = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
+                    Date now = inputFormat.parse(now24);
+
+                    if (now != null && startDate != null && endDate != null) {
+                        // Check if the current time is within the water blockage period
+                        if (now.compareTo(startDate) >= 0 && now.compareTo(endDate) <= 0) {
                             statusView.setText("🛑 Water: Water Blockage\n" +
                                     "🌊 Water Level: " + getWaterLevelDescription(waterLevel));
-                        } else {
-                            statusView.setText("⚠️ Warning: Water blockage from " + startTime + " to " + endTime +
-                                    "\n🌊 Water Level: " + getWaterLevelDescription(waterLevel));
+                        }
+                        // If the current time is past the water blockage period
+                        else if (now.compareTo(endDate) > 0) {
+                            statusView.setText("🚫 No Water Blockage, was blocked from " + startFormatted +
+                                    " to " + endFormatted + "\n🌊 Water Level: " + getWaterLevelDescription(waterLevel));
+                        }
+                        // If the current time is before the blockage period
+                        else {
+                            statusView.setText("⚠️ Warning: Water Blocked from " + startFormatted +
+                                    " to " + endFormatted + "\n🌊 Water Level: " + getWaterLevelDescription(waterLevel));
                         }
                     }
                 } catch (ParseException e) {
@@ -667,7 +692,7 @@ public class RoutingActivity extends AppCompatActivity {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                String currentTime = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
+                String currentTime = new SimpleDateFormat("hh:mm:ss a", Locale.getDefault()).format(new Date());
                 clockView.setText("⏰ Current Time: " + currentTime);
 
                 statusView.setText("😊 No water blockage today!");

@@ -149,7 +149,6 @@ public class MainActivity extends AppCompatActivity {
         fetchPOIs();
 
         // Route between two points in Dhaka
-        calculateRoute(new GeoPoint(23.8103, 90.4125), new GeoPoint(23.7949, 90.4043)); // Example: Dhaka route
 
         // Hamburger Menu Click Listener
         menuIcon.setOnClickListener(v -> drawerLayout.openDrawer(findViewById(R.id.navigation_view)));
@@ -1135,76 +1134,6 @@ public class MainActivity extends AppCompatActivity {
 
 
     // Method to calculate a route between two points
-    private void calculateRoute(GeoPoint startPoint, GeoPoint endPoint) {
-        // Add markers for start and end points
-        Marker startMarker = new Marker(mapView);
-        startMarker.setPosition(startPoint);
-        startMarker.setTitle("Start Point");
-        startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        mapView.getOverlays().add(startMarker);
-
-        Marker endMarker = new Marker(mapView);
-        endMarker.setPosition(endPoint);
-        endMarker.setTitle("End Point");
-        endMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        mapView.getOverlays().add(endMarker);
-
-        String osrmUrl = "http://router.project-osrm.org/route/v1/driving/" + startPoint.getLongitude() + "," + startPoint.getLatitude() + ";" + endPoint.getLongitude() + "," + endPoint.getLatitude() + "?overview=full&geometries=geojson";
-
-        OkHttpClient client = new OkHttpClient();
-        Request request = new Request.Builder().url(osrmUrl).build();
-
-        new Thread(() -> {
-            try {
-                Response response = client.newCall(request).execute();
-                if (response.isSuccessful() && response.body() != null) {
-                    String jsonResponse = response.body().string();
-                    Log.d(TAG, "OSRM API Response: " + jsonResponse);
-                    runOnUiThread(() -> displayRoute(jsonResponse, startPoint, endPoint));
-                } else {
-                    String errorMsg = "Route request failed. Code: " + response.code();
-                    Log.e(TAG, errorMsg);
-                    runOnUiThread(() -> Toast.makeText(this, "Failed to calculate route: " + errorMsg, Toast.LENGTH_LONG).show());
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Error calculating route", e);
-                runOnUiThread(() -> Toast.makeText(this, "Error calculating route: " + e.getMessage(), Toast.LENGTH_LONG).show());
-            }
-        }).start();
-    }
-
-    // Method to display route on the map
-    private void displayRoute(String jsonResponse, GeoPoint startPoint, GeoPoint endPoint) {
-        try {
-            JSONObject jsonObject = new JSONObject(jsonResponse);
-            JSONArray coordinates = jsonObject.getJSONArray("routes").getJSONObject(0).getJSONObject("geometry").getJSONArray("coordinates");
-
-            List<GeoPoint> geoPoints = new ArrayList<>();
-            for (int i = 0; i < coordinates.length(); i++) {
-                JSONArray coord = coordinates.getJSONArray(i);
-                double lon = coord.getDouble(0);
-                double lat = coord.getDouble(1);
-                geoPoints.add(new GeoPoint(lat, lon));
-            }
-
-            // Create and style the polyline
-            Polyline polyline = new Polyline();
-            polyline.setPoints(geoPoints);
-            polyline.setColor(getResources().getColor(android.R.color.holo_red_dark)); // Dark red color
-            polyline.setWidth(7.0f); // Adjust width
-            mapView.getOverlays().add(polyline);
-
-            // Adjust map to fit the route
-            BoundingBox boundingBox = BoundingBox.fromGeoPoints(geoPoints);
-            mapView.zoomToBoundingBox(boundingBox, true);
-
-            mapView.invalidate(); // Refresh the map
-            Toast.makeText(this, "Route added to map", Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            Log.e(TAG, "Error displaying route", e);
-            Toast.makeText(this, "Error displaying route: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
 
 
 

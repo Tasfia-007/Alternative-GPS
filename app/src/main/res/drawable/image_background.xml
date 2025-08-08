@@ -1,4 +1,4 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <solid android:color="#E9CDED"/> <!-- Light grayish background for image area -->
+    <solid android:color="#405B59"/> <!-- Light grayish background for image area -->
     <corners android:radius="15dp"/>
 </shape>

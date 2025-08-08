@@ -42,11 +42,13 @@ public class LogAreaActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ScrollView scrollView = new ScrollView(this);
+        scrollView.setBackgroundResource(R.drawable.alrt2);
         containerLayout = new LinearLayout(this);
         containerLayout.setOrientation(LinearLayout.VERTICAL);
         scrollView.addView(containerLayout);
 
         setContentView(scrollView);
+
 
         fetchRecentLogs();
     }

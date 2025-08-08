@@ -432,18 +432,7 @@ public class ReportIssueActivity extends AppCompatActivity {
 
 
 
-    private String getRoadName(GeoPoint geoPoint) {
-        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-        try {
-            List<Address> addresses = geocoder.getFromLocation(geoPoint.getLatitude(), geoPoint.getLongitude(), 1);
-            if (addresses != null && !addresses.isEmpty()) {
-                return addresses.get(0).getThoroughfare();
-            }
-        } catch (IOException e) {
-            Log.e(TAG, "Geocoder failed", e);
-        }
-        return "Unknown Road";
-    }
+
 
     private void parseCoordinates(String jsonResponse) {
         try {
