@@ -32,6 +32,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Save Route"
+            android:backgroundTint="#009688"
             android:visibility="gone" /> <!-- Initially hidden -->
 
         <!-- Clear Points Button -->
@@ -41,6 +42,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Clear Points"
+            android:backgroundTint="#009688"
             android:visibility="gone" /> <!-- Initially hidden -->
 
     </LinearLayout>

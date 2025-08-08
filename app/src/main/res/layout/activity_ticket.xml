@@ -63,10 +63,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Search Tickets"
-        android:textColor="@android:color/white"
+        android:textColor="@color/drawer_text_color"
         android:layout_marginTop="12dp"
-        android:background="@drawable/green_button_gradient"
-    android:backgroundTint="@android:color/transparent"
+
+        android:backgroundTint="#009688"
     android:padding="16dp"
     android:textSize="18sp"/>
 

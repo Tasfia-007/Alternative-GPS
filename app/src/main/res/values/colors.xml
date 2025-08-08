@@ -7,7 +7,14 @@
     <color name="light_green">#C8E6C9</color>
     <color name="violet_color">#8A2BE2</color>
     <color name="green_50">#E8F5E9</color>
-    <color name="green_700">#388E3C</color>
+    <color name="green_700">#009688</color>
     <color name="green_900">#1B5E20</color>
+    <color name="mint_bg">#E0F7F4</color> <!-- Soft mint -->
+    <color name="drawer_icon_color">#00695C</color> <!-- Icon color -->
+    <color name="drawer_text_color">#004D40</color> <!-- Text color -->
+    <color name="selected_item_color">#B2DFDB</color>
+    <color name="black2">#133535</color>
+
+
 
 </resources>

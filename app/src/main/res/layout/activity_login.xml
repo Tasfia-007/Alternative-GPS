@@ -1,14 +1,14 @@
-<FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <!-- Background Image -->
     <ImageView
         android:id="@+id/bg_map_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="@drawable/login_bg"
+        android:src="@drawable/log"
         android:scaleType="centerCrop"
         android:alpha="0.7" /> <!-- Adjust transparency -->
 
@@ -22,31 +22,32 @@
 
         <ImageView
             android:id="@+id/app_logo"
-            android:layout_width="96dp"
-            android:layout_height="93dp"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
             android:layout_gravity="center"
             android:layout_marginBottom="20dp"
-            android:src="@drawable/images" />
+            android:src="@drawable/icon" />
 
         <TextView
             android:id="@+id/login_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Login"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="#2E7D32"
             android:layout_gravity="center"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="24dp"
+            android:text="Login"
+            android:textColor="#009688"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
         <EditText
             android:id="@+id/email_input"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Email"
+            android:textColor="#0C645C"
             android:inputType="textEmailAddress"
             android:padding="14dp"
-            android:background="@drawable/rounded_edittext_bg"
+            android:background="@drawable/rounded_box"
             android:layout_marginBottom="12dp"/>
 
         <FrameLayout
@@ -61,7 +62,8 @@
                 android:hint="Password"
                 android:inputType="textPassword"
                 android:padding="14dp"
-                android:background="@drawable/rounded_edittext_bg"
+                android:textColor="#0C645C"
+                android:background="@drawable/rounded_box"
                 android:layout_gravity="center" />
 
             <ImageView
@@ -71,6 +73,7 @@
                 android:src="@drawable/eye"
                 android:layout_gravity="end|center_vertical"
                 android:padding="8dp"
+                app:tint="#00BCD4"
                 android:layout_marginEnd="10dp"
                 android:contentDescription="Toggle password visibility" />
         </FrameLayout>
@@ -84,7 +87,7 @@
             android:text="Login"
             android:textAllCaps="false"
             android:textColor="#FFFFFF"
-            android:backgroundTint="#4CAF50"
+            android:backgroundTint="#009688"
 
             android:layout_marginBottom="20dp" />
 
@@ -93,7 +96,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Don't have an account? Sign Up"
-            android:textColor="#2E7D32"
+            android:textColor="#009688"
             android:textSize="16sp"
             android:layout_gravity="center"
             android:clickable="true"

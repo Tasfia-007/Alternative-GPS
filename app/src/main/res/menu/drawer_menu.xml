@@ -1,27 +1,34 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/home"
+        android:icon="@drawable/ic_home2"
         android:title="Home" />
     <item
         android:id="@+id/weather"
+        android:icon="@drawable/ic_weather"
         android:title="Weather Update" />
     <item
         android:id="@+id/report_issue"
+        android:icon="@drawable/ic_report"
         android:title="Report Issue" />
     <item
         android:id="@+id/water"
-        android:title="Water Logged Area Reported by user" />
+        android:icon="@drawable/ic_water"
+        android:title="Water Logged Areas" />
     <item
         android:id="@+id/alert"
+        android:icon="@drawable/ic_alert"
         android:title="Alert" />
     <item
         android:id="@+id/travel_route_schedule"
+        android:icon="@drawable/ic_route"
         android:title="Travel Route Schedule" />
-
     <item
         android:id="@+id/book_tickets"
+        android:icon="@drawable/ic_ticket"
         android:title="Book Tickets" />
     <item
         android:id="@+id/help"
-        android:title="Help/Support" />
+        android:icon="@drawable/ic_help"
+        android:title="Help / Support" />
 </menu>

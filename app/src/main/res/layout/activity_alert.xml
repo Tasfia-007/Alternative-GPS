@@ -6,7 +6,7 @@
     android:orientation="vertical"
     android:padding="20dp"
     android:gravity="center"
-    android:background="@android:color/white">
+    android:background="@drawable/alrt">  <!-- background image added here -->
 
     <!-- Contact Name Field -->
     <TextView
@@ -14,12 +14,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Include Contact"
+        android:background="@drawable/rounded_box_gray"
         android:textSize="18sp"
         android:textStyle="bold"
         android:gravity="center"
         android:padding="10dp"
-        android:background="@android:color/darker_gray"
-        android:textColor="#333333"
+        android:textColor="#FFFFFF"
         tools:ignore="HardcodedText" />
 
     <!-- Contact Number Field -->
@@ -32,9 +32,8 @@
         android:textStyle="bold"
         android:gravity="center"
         android:padding="10dp"
-        android:background="@android:color/darker_gray"
-        android:textColor="#333333"
-
+        android:background="@drawable/rounded_box_gray"
+        android:textColor="#FFFFFF"
         android:layout_marginTop="10dp"
         tools:ignore="HardcodedText" />
 
@@ -43,11 +42,11 @@
         android:id="@+id/alert_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="ALERT!"
+        android:text="SEND ALERT!"
         android:textSize="22sp"
         android:textStyle="bold"
         android:gravity="center"
-        android:background="@android:color/holo_red_dark"
+        android:backgroundTint="#891007"
         android:textColor="@android:color/white"
         android:layout_marginTop="20dp"
         android:padding="15dp"

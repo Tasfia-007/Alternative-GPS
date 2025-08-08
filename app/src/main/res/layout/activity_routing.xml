@@ -46,7 +46,7 @@
         android:layout_marginTop="6dp"
         android:textAllCaps="false"
         android:textColor="@android:color/white"
-        android:backgroundTint="@android:color/holo_green_dark" />
+        android:backgroundTint="@color/green_700" />
 
     <!-- The Map -->
     <org.osmdroid.views.MapView

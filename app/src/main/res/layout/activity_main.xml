@@ -13,8 +13,13 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
+        android:background="@color/mint_bg"
+        app:menu="@menu/drawer_menu"
+        app:itemIconTint="@null"
 
-        app:menu="@menu/drawer_menu" />
+        app:itemTextColor="@color/drawer_text_color"
+        app:itemBackground="@drawable/drawer_item_background" />
+
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -129,7 +134,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="8dp"
 
-                        app:backgroundTint="#104B13"
+                        app:backgroundTint="#009688"
                         android:padding="10dp"
                         android:text="Banks"
                         android:textColor="#FFFFFF" />
@@ -139,7 +144,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="8dp"
-                        app:backgroundTint="#104B13"
+                        app:backgroundTint="#009688"
                         android:padding="10dp"
                         android:text="Hospitals"
                         android:textColor="#FFFFFF" />
@@ -150,7 +155,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="8dp"
 
-                        app:backgroundTint="#104B13"
+                        app:backgroundTint="#009688"
                         android:padding="10dp"
                         android:text="Schools"
                         android:textColor="#FFFFFF" />
@@ -161,7 +166,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="8dp"
 
-                        app:backgroundTint="#104B13"
+                        app:backgroundTint="#009688"
                         android:padding="10dp"
                         android:text="Police Stations"
                         android:textColor="#FFFFFF" />
@@ -172,7 +177,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="8dp"
 
-                        app:backgroundTint="#104B13"
+                        app:backgroundTint="#009688"
                         android:padding="10dp"
                         android:text="Gas Stations"
                         android:textColor="#FFFFFF" />
@@ -183,7 +188,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="8dp"
 
-                        app:backgroundTint="#104B13"
+                        app:backgroundTint="#009688"
                         android:padding="10dp"
                         android:text="ATMs"
                         android:textColor="#FFFFFF" />
@@ -194,7 +199,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="8dp"
 
-                        app:backgroundTint="#104B13"
+                        app:backgroundTint="#009688"
                         android:padding="10dp"
                         android:text="Libraries"
                         android:textColor="#FFFFFF" />
