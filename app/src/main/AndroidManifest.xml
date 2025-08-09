@@ -58,6 +58,9 @@
         <activity
             android:name=".EditProfileActivity"
             android:exported="false" />
+        <activity android:name=".InMap"
+            android:exported="false"
+            tools:ignore="Instantiatable" />
         <activity android:name=".AlertActivity" />
         <activity
             android:name=".CustomInfoWindow"

@@ -463,13 +463,13 @@ public class RoutingActivity extends AppCompatActivity {
     private String getWaterLevelDescription(float waterLevel) {
         switch ((int) waterLevel) {
             case 1:
-                return "Not much water ";
+                return "Not much water: LEVEL 1 ";
             case 2:
-                return "Significant water accumulation";
+                return "Significant water accumulation: LEVEL 2";
             case 3:
-                return "High water level - caution advised";
+                return "High water level - caution advised: LEVEL 3";
             case 4:
-                return "Very high water level -try to avoid this road";
+                return "Very high water level -try to avoid this road: LEVEL 3";
             default:
                 return "Unknown water level";
         }

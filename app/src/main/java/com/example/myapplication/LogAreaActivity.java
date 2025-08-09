@@ -1,12 +1,14 @@
 package com.example.myapplication;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -190,6 +192,19 @@ public class LogAreaActivity extends AppCompatActivity {
         imageLayout.addView(imageView);
 
 // Add both to card
+        // Add the "Show in Map" button
+        Button mapButton = new Button(context);
+        mapButton.setText("Show in Map");
+        mapButton.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        mapButton.setOnClickListener(v -> {
+            Intent intent = new Intent(context, InMap.class);
+            intent.putExtra("place_name", placeName); // You can also send coordinates if needed
+            context.startActivity(intent);
+        });
+
+        infoLayout.addView(mapButton); // Add button to the info layout
+
         card.addView(infoLayout);
         card.addView(imageLayout);
 
