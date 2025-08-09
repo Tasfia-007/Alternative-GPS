@@ -488,7 +488,8 @@ public class WeatherActivity extends AppCompatActivity {
 
         updateTimeRunnable = () -> {
             String date = new SimpleDateFormat("dd MMM, EEEE, yyyy", Locale.getDefault()).format(new Date());
-            String time = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
+            String time = new SimpleDateFormat("hh:mm:ss a", Locale.getDefault()).format(new Date());
+
 
             runOnUiThread(() -> {
                 ((TextView) findViewById(R.id.current_date)).setText(date);

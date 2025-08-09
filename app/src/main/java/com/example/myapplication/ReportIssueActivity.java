@@ -287,7 +287,7 @@ public class ReportIssueActivity extends AppCompatActivity {
         }
 
         setupMapTouchListener(); // Reset the map listener
-        Toast.makeText(this, "Points Cleared", Toast.LENGTH_SHORT).show();
+
         Log.d(TAG, "All Points Cleared");
     }
 
@@ -346,12 +346,18 @@ public class ReportIssueActivity extends AppCompatActivity {
                 return;
             }
 
-            // Now save to CSV
+            // ✅ Add null check for all 4 points before calling saveAreaWithDetails
+            if (points[0] == null || points[1] == null || points[2] == null || points[3] == null) {
+                Toast.makeText(this, "Please select all 4 points before saving", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Now safe to call this
             saveAreaWithDetails(placeName, waterLevel, comment, imagePath);
 
-            // Clear selection
             clearPoints();
         });
+
 
         builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
 
@@ -477,16 +483,41 @@ public class ReportIssueActivity extends AppCompatActivity {
 
 
     private void saveAreaWithDetails(String placeName, String waterLevel, String comment, String imagePath) {
+        // Log method call
+        Log.d(TAG, "saveAreaWithDetails() called with: " + placeName + ", " + waterLevel + ", " + comment);
+
+        // Take a snapshot of points[] to prevent overwrite or async issues
+        GeoPoint[] selectedPoints = new GeoPoint[4];
+        System.arraycopy(points, 0, selectedPoints, 0, 4);
+
         new Thread(() -> {
             try {
-                OkHttpClient client = new OkHttpClient();
+                // Log all points for debug
+                for (int i = 0; i < selectedPoints.length; i++) {
+                    if (selectedPoints[i] == null) {
+                        Log.e(TAG, "selectedPoints[" + i + "] is NULL!");
+                    } else {
+                        Log.d(TAG, "selectedPoints[" + i + "] = " +
+                                selectedPoints[i].getLatitude() + ", " + selectedPoints[i].getLongitude());
+                    }
+                }
 
+                // Defensive null check
+                for (int i = 0; i < 4; i++) {
+                    if (selectedPoints[i] == null) {
+                        runOnUiThread(() -> Toast.makeText(this, "Missing polygon point!", Toast.LENGTH_SHORT).show());
+                        Log.e(TAG, "Aborted: selectedPoints[" + i + "] is null.");
+                        return;
+                    }
+                }
+
+                OkHttpClient client = new OkHttpClient();
                 String finalImageUrl = null;
 
+                // Upload image if available
                 if (imagePath != null) {
-                    // First compress the image before uploading
                     File imageFile = new File(imagePath);
-                    imageFile = compressImage(imageFile); // 🔥 Compress before uploading
+                    imageFile = compressImage(imageFile);  // Optional compression
 
                     RequestBody fileBody = RequestBody.create(imageFile, okhttp3.MediaType.parse("image/jpeg"));
                     String uniqueFileName = UUID.randomUUID().toString() + ".jpg";
@@ -496,7 +527,7 @@ public class ReportIssueActivity extends AppCompatActivity {
                             .addFormDataPart("file", uniqueFileName, fileBody)
                             .build();
 
-                    String bucketName = "waterlogging-pictures"; // YOUR SUPABASE BUCKET NAME
+                    String bucketName = "waterlogging-pictures";
                     String uploadUrl = SUPABASE_URL + "/storage/v1/object/" + bucketName + "/" + uniqueFileName;
 
                     Request uploadRequest = new Request.Builder()
@@ -515,15 +546,25 @@ public class ReportIssueActivity extends AppCompatActivity {
                     }
                 }
 
-                // Now prepare entry for table
-                String entryTime = java.time.LocalDateTime.now().toString(); // Current time in ISO format
-
+                // Prepare JSON for Supabase insert
+                String entryTime = java.time.LocalDateTime.now().toString();
+                String userId = sharedPreferences.getString("userId", null);
                 JSONObject json = new JSONObject();
                 json.put("entry_time", entryTime);
                 json.put("place_name", placeName);
-                json.put("water_level", Integer.parseInt(waterLevel)); // Make sure integer
-                json.put("comment", TextUtils.isEmpty(comment) ? JSONObject.NULL : comment); // Use JSONObject.NULL if empty
+                json.put("water_level", Integer.parseInt(waterLevel));
+                json.put("comment", TextUtils.isEmpty(comment) ? JSONObject.NULL : comment);
                 json.put("picture_url", finalImageUrl != null ? finalImageUrl : JSONObject.NULL);
+                json.put("user_id", userId != null ? userId : JSONObject.NULL);  // ✅ now works
+                // Add 4 polygon coordinates
+                json.put("point1_lat", selectedPoints[0].getLatitude());
+                json.put("point1_lon", selectedPoints[0].getLongitude());
+                json.put("point2_lat", selectedPoints[1].getLatitude());
+                json.put("point2_lon", selectedPoints[1].getLongitude());
+                json.put("point3_lat", selectedPoints[2].getLatitude());
+                json.put("point3_lon", selectedPoints[2].getLongitude());
+                json.put("point4_lat", selectedPoints[3].getLatitude());
+                json.put("point4_lon", selectedPoints[3].getLongitude());
 
                 RequestBody requestBodyInsert = RequestBody.create(
                         json.toString(),
@@ -542,8 +583,9 @@ public class ReportIssueActivity extends AppCompatActivity {
 
                 if (insertResponse.isSuccessful()) {
                     runOnUiThread(() -> {
-                        Toast.makeText(this, "Area saved successfully to Supabase!", Toast.LENGTH_SHORT).show();
-                        Log.d(TAG, "Data inserted successfully.");
+                        Toast.makeText(this, "Area & coordinates saved successfully!", Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, "Data inserted successfully to Supabase.");
+                        clearPoints(); // ✅ Safe to clear after success
                     });
                 } else {
                     runOnUiThread(() -> {
@@ -551,6 +593,7 @@ public class ReportIssueActivity extends AppCompatActivity {
                         Log.e(TAG, "Insert failed: " + insertResponse.message());
                     });
                 }
+
             } catch (Exception e) {
                 e.printStackTrace();
                 runOnUiThread(() -> {
@@ -560,8 +603,6 @@ public class ReportIssueActivity extends AppCompatActivity {
             }
         }).start();
     }
-
-
 
 
     private File compressImage(File originalFile) {
